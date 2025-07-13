@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Settings - Project Zenith</title>
+    <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="css/settings.css">
+</head>
+<body>
+    <nav id="main-nav"></nav>
+    <main class="container">
+        <h1>Settings</h1>
+        <div class="settings-grid">
+
+            <section class="card settings-card">
+                <h2>Appearance</h2>
+                <p>Choose between a light or dark theme for the application.</p>
+                <div class="setting-action">
+                    <button id="theme-toggle-btn" class="button-primary">Toggle Theme</button>
+                </div>
+            </section>
+
+            <section class="card settings-card">
+                <h2>Data Management</h2>
+                <p>Backup all your tasks, habits, and notes to a single JSON file. You can import this file later to restore your data.</p>
+                <div class="setting-action">
+                    <button id="export-btn" class="button-primary">Export All Data</button>
+                </div>
+                <div class="setting-action">
+                    <input type="file" id="import-file" accept=".json" style="display: none;">
+                    <button id="import-btn" class="button-primary">Import from File</button>
+                </div>
+            </section>
+
+            <section class="card settings-card">
+                <h2>Notifications</h2>
+                <p>Allow the app to send you browser notifications for tasks that are due today.</p>
+                <div class="setting-action">
+                    <button id="enable-notifications-btn" class="button-primary">Enable Notifications</button>
+                </div>
+            </section>
+
+            <section class="card settings-card full-width">
+                <h2>AI Assistant</h2>
+                <p>Enter your Groq API key to enable AI-powered features like task generation and note summarization. Your key is stored securely in your browser and is never sent to our servers.</p>
+                <div class="setting-action api-key-action">
+                    <input type="password" id="api-key-input" placeholder="gsk_...">
+                    <button id="save-key-btn" class="button-primary">Save Key</button>
+                    <span id="api-key-status"></span>
+                </div>
+            </section>
+
+        </div>
+    </main>
+
+    <script src="js/db/database.js"></script>
+    <script src="js/features/settings.js"></script>
+    <script src="js/ui.js"></script>
+</body>
+</html>

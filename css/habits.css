@@ -1,0 +1,64 @@
+#habit-graph-container {
+    padding: 2rem;
+    background-color: rgba(0,0,0,0.2);
+}
+
+.habit-graph {
+    width: 100%;
+    height: 250px;
+}
+
+.habit-graph .bar {
+    fill: var(--accent-color);
+    transition: all 0.3s ease;
+}
+
+.habit-graph .bar:hover {
+    fill: white;
+}
+
+.habit-graph .axis-label {
+    fill: #aaa;
+    font-size: 0.8rem;
+}
+
+#habit-list-container h2 {
+    text-align: left;
+    margin-top: 0;
+}
+
+.habit-list-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    border-bottom: 1px solid var(--subtle-border-color);
+}
+
+.habit-list-item:last-child {
+    border-bottom: none;
+}
+
+.habit-list-item p {
+    margin: 0;
+    font-size: 1.1rem;
+}
+
+.complete-habit-btn {
+    padding: 0.5rem 1rem;
+    font-size: 0.9rem;
+    min-width: 100px;
+}
+
+.complete-habit-btn.completed {
+    background-color: #333;
+    color: #888;
+    border-color: #444;
+    cursor: not-allowed;
+}
+
+#add-habit-form {
+    margin-top: 2rem;
+    border-top: 1px solid var(--subtle-border-color);
+    padding-top: 1.5rem;
+}

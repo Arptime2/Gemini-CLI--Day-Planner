@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Habits - Project Zenith</title>
+    <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="css/habits.css">
+</head>
+<body>
+    <nav id="main-nav"></nav>
+    <main class="container">
+        <h1>Habit Progress</h1>
+        <div id="habit-graph-container" class="card">
+            <!-- SVG Graph will be generated here -->
+        </div>
+        <div id="habit-list-container" class="card">
+            <h2>Today's Habits</h2>
+            <div id="habit-list"></div>
+            <form id="add-habit-form">
+                <input type="text" id="habit-input" placeholder="Add a new habit..." required>
+                <button type="submit" class="button-primary">Add Habit</button>
+            </form>
+        </div>
+    </main>
+
+    <script src="js/db/database.js"></script>
+    <script src="js/features/habits.js"></script>
+    <script src="js/ui.js"></script>
+</body>
+</html>

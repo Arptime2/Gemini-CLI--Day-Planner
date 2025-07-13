@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notes - Project Zenith</title>
+    <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="css/notes.css">
+</head>
+<body>
+    <nav id="main-nav"></nav>
+
+    <main class="notes-container">
+        <aside id="notes-sidebar" class="card">
+            <button id="new-note-btn" class="button-primary">New Note</button>
+            <div id="notes-list">
+                <!-- Dynamically populated -->
+            </div>
+        </aside>
+
+        <section id="note-editor-container" class="card">
+            <!-- Dynamically populated -->
+            <div class="empty-state">
+                <h2>Select a note or create a new one.</h2>
+            </div>
+        </section>
+    </main>
+
+    <script src="js/db/database.js"></script>
+    <script src="js/groq.js"></script>
+    <script src="js/features/notes.js"></script>
+    <script src="js/undo.js"></script>
+    <script src="js/ui.js"></script>
+</body>
+</html>

@@ -1,0 +1,80 @@
+/* Main Calendar Grid */
+#calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 5px;
+    table-layout: fixed; /* Prevents content from stretching columns */
+}
+
+.calendar-day-header {
+    text-align: center;
+    font-weight: bold;
+    color: var(--accent-color);
+    padding-bottom: 10px;
+}
+
+.calendar-day {
+    border: 1px solid var(--subtle-border-color);
+    height: 120px; /* Use fixed height instead of min-height */
+    padding: 5px;
+    transition: background-color 0.3s;
+    cursor: pointer;
+    overflow: hidden; /* Hide any content that overflows vertically */
+}
+
+.calendar-day:hover {
+    background-color: rgba(0, 255, 255, 0.05);
+}
+
+.day-number {
+    font-weight: bold;
+}
+
+.calendar-day ul {
+    list-style: none;
+    padding: 0;
+    margin: 5px 0 0 0;
+    font-size: 0.8rem;
+}
+
+/* This is the key rule for preventing stretching */
+.calendar-day li {
+    background-color: var(--accent-color);
+    color: var(--background-color);
+    border-radius: 3px;
+    padding: 2px 5px;
+    margin-top: 3px;
+    white-space: nowrap;      /* Prevents text from wrapping */
+    overflow: hidden;         /* Hides the overflowing text */
+    text-overflow: ellipsis;  /* Adds the "..." */
+    display: block;
+}
+
+/* Detailed Day View */
+#day-view-container h2 {
+    text-align: left;
+    margin-top: 0;
+    border-bottom: 1px solid var(--subtle-border-color);
+    padding-bottom: 1rem;
+}
+
+.day-task-list {
+    list-style: none;
+    padding: 0;
+    margin-top: 1rem;
+}
+
+.day-task-list li {
+    font-size: 1.1rem;
+    padding: 1rem;
+    border-bottom: 1px solid var(--subtle-border-color);
+    white-space: normal; /* Ensure full text is visible here */
+}
+
+.day-task-list li:last-child {
+    border-bottom: none;
+}
+
+#back-to-calendar-btn {
+    margin-top: 2rem;
+}

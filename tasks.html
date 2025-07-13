@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tasks - Project Zenith</title>
+    <link rel="stylesheet" href="css/main.css">
+</head>
+<body>
+    <nav id="main-nav"></nav>
+    <main class="container">
+        <h1>Task Manager</h1>
+        <div class="view-toggle">
+            <button id="list-view-btn" class="view-btn active">List</button>
+            <button id="kanban-view-btn" class="view-btn">Kanban</button>
+        </div>
+        <form id="add-task-form" class="card">
+            <input type="text" id="task-input" placeholder="Add a new task..." required>
+            <input type="date" id="task-due-date">
+            <button type="submit" class="button-primary">Add Task</button>
+            <button type="button" id="generate-tasks-btn" class="button-primary" style="display: none;">Generate Tasks</button>
+        </form>
+        <div id="task-list" class="card"></div>
+    </main>
+
+    <script src="js/db/database.js"></script>
+    <script src="js/groq.js"></script>
+    <script src="js/features/tasks.js"></script>
+    <script src="js/ui.js"></script>
+</body>
+</html>

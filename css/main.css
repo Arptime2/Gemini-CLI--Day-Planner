@@ -1,0 +1,440 @@
+@keyframes subtle-gradient {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+@keyframes fade-in {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+:root {
+    --background-color: #0A0A1A;
+    --primary-ui-color: rgba(26, 26, 42, 0.8);
+    --accent-color: #00FFFF; /* Cyan */
+    --text-color: #E0E0E0;
+    --subtle-border-color: rgba(0, 255, 255, 0.2);
+    --shadow-color: rgba(0, 255, 255, 0.3);
+}
+
+body {
+    background: linear-gradient(270deg, #0A0A1A, #101028, #0A0A1A);
+    background-size: 600% 600%;
+    animation: subtle-gradient 16s ease infinite;
+    color: var(--text-color);
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+    margin: 0;
+    padding: 0;
+}
+
+main {
+    animation: fade-in 0.5s ease-out forwards;
+}
+
+h1, h2, h3 {
+    color: var(--accent-color);
+    text-align: center;
+    text-shadow: 0 0 5px var(--shadow-color);
+}
+
+nav {
+    display: flex;
+    justify-content: center;
+    background-color: var(--primary-ui-color);
+    padding: 1rem;
+    border-bottom: 1px solid var(--subtle-border-color);
+    backdrop-filter: blur(10px);
+}
+
+nav a {
+    color: var(--text-color);
+    text-decoration: none;
+    margin: 0 1rem;
+    font-size: 1.2rem;
+    transition: color 0.3s, text-shadow 0.3s;
+}
+
+nav a:hover, nav a.active {
+    color: var(--accent-color);
+    text-shadow: 0 0 8px var(--shadow-color);
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 1rem;
+}
+
+.card {
+    background-color: var(--primary-ui-color);
+    border: 1px solid var(--subtle-border-color);
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin: 1rem;
+    backdrop-filter: blur(10px);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.card:hover {
+    transform: perspective(1000px) translateY(-5px) rotateX(2deg);
+    box-shadow: 0 10px 20px var(--shadow-color);
+}
+
+.button-primary {
+    background-color: var(--accent-color);
+    color: var(--background-color);
+    border: 1px solid var(--accent-color);
+    padding: 0.8rem 1.5rem;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: bold;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.button-primary:hover {
+    transform: scale(1.05);
+    box-shadow: 0 0 15px var(--shadow-color);
+}
+
+.button-primary:active {
+    transform: scale(0.98);
+}
+
+#add-task-form, #add-habit-form {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+#task-input, #habit-input, #task-due-date {
+    flex-grow: 1;
+    background-color: var(--background-color);
+    color: var(--text-color);
+    border: 1px solid var(--subtle-border-color);
+    border-radius: 5px;
+    padding: 0.8rem;
+    font-size: 1rem;
+}
+
+.task-item, .habit-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    border-bottom: 1px solid var(--subtle-border-color);
+    animation: fade-in 0.5s ease-out forwards;
+    opacity: 0;
+    animation-delay: calc(var(--i, 0) * 50ms);
+}
+
+.task-item:last-child, .habit-item:last-child { border-bottom: none; }
+.task-item.completed p { text-decoration: line-through; color: #888; }
+.habit-item.completed p { color: var(--accent-color); font-weight: bold; }
+.task-item p, .habit-item p { margin: 0; flex-grow: 1; }
+.task-item div, .habit-item div { display: flex; gap: 0.5rem; }
+
+.task-item button, .habit-item button, .task-item .edit-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 1.2rem;
+    transition: transform 0.2s, color 0.2s;
+    color: var(--text-color);
+}
+
+.task-item button:hover, .habit-item button:hover, .task-item .edit-btn:hover {
+    transform: scale(1.2);
+    color: var(--accent-color);
+}
+
+/* Calendar */
+#calendar-controls { display: flex; justify-content: space-between; align-items: center; }
+#calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; }
+.calendar-day-header { text-align: center; font-weight: bold; color: var(--accent-color); padding-bottom: 10px; }
+.calendar-day { border: 1px solid var(--subtle-border-color); min-height: 120px; padding: 5px; transition: background-color 0.3s; cursor: pointer; }
+.calendar-day:hover { background-color: rgba(0, 255, 255, 0.05); }
+.day-number { font-weight: bold; }
+.calendar-day ul { list-style: none; padding: 0; margin: 5px 0 0 0; font-size: 0.8rem; }
+.calendar-day li {
+    background-color: var(--accent-color);
+    color: var(--background-color);
+    border-radius: 3px;
+    padding: 2px 5px;
+    margin-top: 3px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: block;
+}
+
+/* Kanban */
+.view-toggle { text-align: center; margin-bottom: 1rem; }
+.view-btn { background: none; border: 1px solid var(--subtle-border-color); color: var(--text-color); padding: 0.5rem 1rem; cursor: pointer; }
+.view-btn.active { background-color: var(--accent-color); color: var(--background-color); }
+.kanban-board { display: flex; gap: 1rem; }
+.kanban-column { flex: 1 1 0; min-width: 0; background-color: var(--primary-ui-color); border-radius: 8px; padding: 1rem; border: 1px solid var(--subtle-border-color); }
+.kanban-column h3 {
+    text-align: center;
+    color: var(--accent-color);
+    margin-top: 0;
+}
+
+.kanban-column h3.interactive-title {
+    cursor: pointer;
+    transition: color 0.2s, text-shadow 0.2s;
+}
+
+.kanban-column h3.interactive-title:hover {
+    color: #fff;
+    text-shadow: 0 0 10px var(--shadow-color);
+}
+
+.kanban-card { background-color: var(--background-color); padding: 1rem; border-radius: 5px; margin-bottom: 1rem; cursor: grab; transition: box-shadow 0.2s; }
+.kanban-card:hover { box-shadow: 0 0 10px var(--shadow-color); }
+
+/* Habit Visualizations */
+#habit-visualizations h2 { text-align: center; color: var(--accent-color); }
+.habit-visualization-item { margin-bottom: 2rem; }
+.habit-visualization-item h3 { text-align: left; margin-left: 1rem; }
+.habit-info { display: flex; justify-content: space-between; align-items: center; margin: 0 1rem; }
+.habit-heatmap { display: grid; grid-template-columns: repeat(15, 1fr); gap: 4px; padding: 1rem; }
+.heatmap-day {
+    width: 16px;
+    height: 16px;
+    background-color: #333;
+    border-radius: 3px;
+    transition: background-color 0.3s;
+}
+.heatmap-day.completed { background-color: var(--accent-color); box-shadow: 0 0 5px var(--shadow-color); }
+
+/* Inline Editor */
+.inline-editor {
+    width: 100%;
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.5s ease-in-out, padding 0.5s ease-in-out;
+    padding: 0 1rem;
+    box-sizing: border-box;
+}
+.inline-editor.visible {
+    max-height: 200px;
+    padding: 1rem;
+    border-top: 1px solid var(--subtle-border-color);
+}
+.inline-editor input {
+    width: 100%;
+    margin-bottom: 1rem;
+    background-color: var(--background-color);
+    color: var(--text-color);
+    border: 1px solid var(--subtle-border-color);
+    border-radius: 5px;
+    padding: 0.8rem;
+}
+
+/* Notes Layout */
+.notes-container {
+    display: flex;
+    gap: 1rem;
+    height: calc(100vh - 120px);
+}
+
+#notes-sidebar {
+    flex: 0 0 20%;
+    display: flex;
+    flex-direction: column;
+}
+
+#new-note-btn {
+    width: 100%;
+    margin-bottom: 1rem;
+}
+
+#notes-list {
+    overflow-y: auto;
+}
+
+.note-list-item {
+    padding: 0.8rem;
+    cursor: pointer;
+    border-radius: 5px;
+    border-bottom: 1px solid var(--subtle-border-color);
+}
+
+.note-list-item:hover {
+    background-color: rgba(0, 255, 255, 0.1);
+}
+
+.note-list-item.active {
+    background-color: var(--accent-color);
+    color: var(--background-color);
+}
+
+#note-editor-container {
+    flex: 1 1 80%;
+    display: flex;
+    flex-direction: column;
+}
+
+#note-editor {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+#note-title {
+    background: none;
+    border: none;
+    color: var(--accent-color);
+    font-size: 2rem;
+    font-weight: bold;
+    padding: 0.5rem;
+    margin-bottom: 1rem;
+    border-bottom: 1px solid var(--subtle-border-color);
+}
+
+#note-content {
+    flex-grow: 1;
+    outline: none;
+    line-height: 1.6;
+    padding: 1rem;
+}
+
+#ai-summary-container {
+    padding: 1rem;
+    border-top: 1px solid var(--subtle-border-color);
+}
+
+/* Light Theme */
+body.light-theme {
+    --background-color: #F0F2F5;
+    --primary-ui-color: #FFFFFF;
+    --accent-color: #0052CC;
+    --text-color: #172B4D;
+    --subtle-border-color: #DFE1E6;
+    --shadow-color: rgba(0, 82, 204, 0.2);
+}
+
+body.light-theme {
+    background: var(--background-color);
+}
+
+/* Undo Notification */
+#undo-notification {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #333;
+    color: white;
+    padding: 1rem 2rem;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    z-index: 2000;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s, visibility 0.3s, transform 0.3s;
+}
+
+#undo-notification.visible {
+    opacity: 1;
+    visibility: visible;
+    transform: translate(-50%, -10px);
+}
+
+#undo-btn {
+    background: none;
+    border: none;
+    color: var(--accent-color);
+    font-weight: bold;
+    cursor: pointer;
+}
+
+/* Modal Styles */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.6); /* Transparent black background */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    backdrop-filter: blur(5px); /* Optional: blur the background */
+}
+
+.modal-content {
+    background-color: rgba(26, 26, 42, 0.9); /* Slightly transparent primary UI color */
+    border: 1px solid var(--subtle-border-color);
+    border-radius: 10px;
+    padding: 2rem;
+    width: 90%;
+    max-width: 500px;
+    box-shadow: 0 0 30px var(--shadow-color);
+    position: relative;
+    animation: fade-in 0.3s ease-out forwards;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.modal-content h2 {
+    margin-top: 0;
+    color: var(--accent-color);
+    text-align: center;
+}
+
+.modal-content p {
+    text-align: center;
+    margin-bottom: 1.5rem;
+}
+
+.modal-content textarea,
+.modal-content input[type="number"] {
+    width: calc(100% - 20px); /* Adjust for padding */
+    padding: 10px;
+    border-radius: 5px;
+    border: 1px solid var(--subtle-border-color);
+    background-color: var(--background-color);
+    color: var(--text-color);
+    font-size: 1rem;
+    margin-bottom: 1rem;
+}
+
+.modal-content button {
+    width: 100%;
+}
+
+.modal-close-btn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    color: red; /* Red 'x' */
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.modal-close-btn:hover {
+    transform: scale(1.2);
+}
+
+/* Dim background when modal is open */
+body.modal-open > *:not(.modal-overlay) {
+    filter: brightness(0.5); /* Dims everything except the modal overlay */
+    pointer-events: none; /* Prevents interaction with dimmed elements */
+    transition: filter 0.3s ease-out;
+}
+
+body:not(.modal-open) > *:not(.modal-overlay) {
+    filter: brightness(1); /* Restore brightness when modal is closed */
+    pointer-events: auto;
+    transition: filter 0.3s ease-out;
+}
