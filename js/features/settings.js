@@ -99,7 +99,6 @@ document.addEventListener('DOMContentLoaded', () => {
     importBtn.addEventListener('click', triggerImport);
     importFile.addEventListener('change', importData);
     saveKeyBtn.addEventListener('click', saveApiKey);
-    
     themeToggleBtn.addEventListener('click', toggleTheme);
 
     loadApiKey();
