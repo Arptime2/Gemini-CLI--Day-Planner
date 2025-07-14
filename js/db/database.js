@@ -1,6 +1,6 @@
 
 const DB_NAME = 'ProjectZenithDB';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 let db;
 
 function initDB() {
@@ -39,6 +39,11 @@ function initDB() {
             if (!db.objectStoreNames.contains('notes')) {
                 console.log('Creating notes object store');
                 db.createObjectStore('notes', { keyPath: 'id', autoIncrement: true });
+            }
+
+            if (!db.objectStoreNames.contains('selected_habits')) {
+                console.log('Creating selected_habits object store');
+                db.createObjectStore('selected_habits', { keyPath: 'id', autoIncrement: true });
             }
         };
     });
@@ -97,11 +102,24 @@ function deleteItem(storeName, id) {
     });
 }
 
+function clearStore(storeName) {
+    return new Promise((resolve, reject) => {
+        initDB().then(db => {
+            const store = getStore(storeName, 'readwrite');
+            const request = store.clear();
+
+            request.onsuccess = () => resolve();
+            request.onerror = (event) => reject('Error clearing store: ' + event.target.error);
+        }).catch(reject);
+    });
+}
+
 // Export functions to be used by other modules
 window.db = {
     initDB,
     addItem,
     getAllItems,
     updateItem,
-    deleteItem
+    deleteItem,
+    clearStore
 };

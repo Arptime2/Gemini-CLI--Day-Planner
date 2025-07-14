@@ -15,9 +15,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- INITIALIZATION ---
     async function init() {
-        [tasksCache, habitsCache] = await Promise.all([
+        [tasksCache, habitsCache, selectedHabits] = await Promise.all([
             window.db.getAllItems('tasks'),
-            window.db.getAllItems('habits')
+            window.db.getAllItems('habits'),
+            window.db.getAllItems('selected_habits')
         ]);
         setView('list');
         checkApiKey();
@@ -66,32 +67,45 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
-        for (const status in columns) {
-            const column = columns[status];
-            const columnEl = document.createElement('div');
-            columnEl.className = 'kanban-column';
-            columnEl.dataset.status = status;
-            const titleEl = document.createElement('h3');
-            titleEl.textContent = column.title;
-            if (column.interactive) {
-                titleEl.classList.add('interactive-title');
-                titleEl.addEventListener('click', openDailyPlanModal);
-            }
-            columnEl.appendChild(titleEl);
-
-            column.tasks.forEach(task => {
-                const cardEl = document.createElement('div');
-                cardEl.className = 'kanban-card';
-                cardEl.textContent = task.text;
-                cardEl.draggable = true;
-                cardEl.dataset.id = task.id;
-                columnEl.appendChild(cardEl);
+        const selectedHabits = window.db.getAllItems('selected_habits');
+        selectedHabits.then(habits => {
+            habits.forEach(habit => {
+                const habitTask = {
+                    id: `habit-${habit.id}`,
+                    text: `(Habit) ${habit.text}`,
+                    status: 'selected',
+                    isHabit: true
+                };
+                columns.selected.tasks.push(habitTask);
             });
 
-            columnEl.addEventListener('dragover', e => e.preventDefault());
-            
-            kanbanBoard.appendChild(columnEl);
-        }
+            for (const status in columns) {
+                const column = columns[status];
+                const columnEl = document.createElement('div');
+                columnEl.className = 'kanban-column';
+                columnEl.dataset.status = status;
+                const titleEl = document.createElement('h3');
+                titleEl.textContent = column.title;
+                if (column.interactive) {
+                    titleEl.classList.add('interactive-title');
+                    titleEl.addEventListener('click', openDailyPlanModal);
+                }
+                columnEl.appendChild(titleEl);
+
+                column.tasks.forEach(task => {
+                    const cardEl = document.createElement('div');
+                    cardEl.className = 'kanban-card';
+                    cardEl.textContent = task.text;
+                    cardEl.draggable = true;
+                    cardEl.dataset.id = task.id;
+                    columnEl.appendChild(cardEl);
+                });
+
+                columnEl.addEventListener('dragover', e => e.preventDefault());
+                
+                kanbanBoard.appendChild(columnEl);
+            }
+        });
     }
 
     // --- TASK & ELEMENT CREATION ---
@@ -189,7 +203,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (taskToUpdate.isHabit && taskToUpdate.status === 'selected') {
             if (newStatus === null || newStatus !== 'selected') {
-                tasksCache = tasksCache.filter(t => String(t.id) !== taskId);
+                const habitId = parseInt(taskId.split('-')[1], 10);
+                window.db.deleteItem('selected_habits', habitId);
                 render();
             }
         } else if (newStatus && taskToUpdate.status !== newStatus) {
@@ -280,7 +295,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const selectedItems = result.split(',').map(item => item.trim()).filter(Boolean);
             let itemsUpdated = 0;
 
-            // Clear any previously selected tasks
+            // Clear any previously selected tasks and habits
+            await window.db.clearStore('selected_habits');
             tasksCache.forEach(task => {
                 if (task.status === 'selected') {
                     task.status = 'todo';
@@ -297,15 +313,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     await window.db.updateItem('tasks', task);
                     itemsUpdated++;
                 } else if (habit) {
-                    // Create a temporary, non-draggable task to represent the habit
-                    const habitTask = {
-                        id: `habit-${habit.id}`,
-                        text: `(Habit) ${habit.text}`,
-                        status: 'selected',
-                        isHabit: true // Custom flag
-                    };
-                    // Add to the start of the cache to appear at the top
-                    tasksCache.unshift(habitTask);
+                    await window.db.addItem('selected_habits', habit);
                     itemsUpdated++;
                 }
             }
