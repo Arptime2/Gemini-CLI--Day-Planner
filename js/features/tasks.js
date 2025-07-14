@@ -405,12 +405,16 @@ document.addEventListener('DOMContentLoaded', () => {
     taskListContainer.addEventListener('touchend', e => {
         if (draggedItem && ghostElement) {
             draggedItem.style.opacity = '1';
+
+            // Determine the final status from the last column we were over.
+            // If we are not over any column, newStatus will be null.
+            const newStatus = lastOverColumn ? lastOverColumn.dataset.status : null;
+            updateTaskStatus(draggedItem.dataset.id, newStatus);
+
+            // Perform cleanup
             if (lastOverColumn) {
                 lastOverColumn.classList.remove('drag-over');
-                const newStatus = lastOverColumn.dataset.status;
-                updateTaskStatus(draggedItem.dataset.id, newStatus);
             }
-
             document.body.removeChild(ghostElement);
             draggedItem = null;
             ghostElement = null;
