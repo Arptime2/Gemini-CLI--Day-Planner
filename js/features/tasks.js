@@ -204,7 +204,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (taskToUpdate.isHabit && taskToUpdate.status === 'selected') {
             if (newStatus === null || newStatus !== 'selected') {
                 const habitId = parseInt(taskId.split('-')[1], 10);
-                window.db.deleteItem('selected_habits', habitId);
+                await window.db.deleteItem('selected_habits', habitId);
+                tasksCache = tasksCache.filter(t => t.id !== taskId); // Remove from in-memory cache
                 render();
             }
         } else if (newStatus && taskToUpdate.status !== newStatus) {
