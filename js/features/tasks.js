@@ -182,33 +182,32 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- KANBAN DRAG & DROP ---
-    async function handleGlobalDrop(event) {
-        event.preventDefault();
-        const transferredId = event.dataTransfer.getData('text/plain');
-        const taskToUpdate = tasksCache.find(t => String(t.id) === transferredId);
+    async function updateTaskStatus(taskId, newStatus) {
+        const taskToUpdate = tasksCache.find(t => String(t.id) === taskId);
 
-        if (!taskToUpdate) return; // Not a task we're tracking
-
-        const targetColumn = event.target.closest('.kanban-column');
-        const newStatus = targetColumn ? targetColumn.dataset.status : null; // null if dropped outside a column
+        if (!taskToUpdate) return;
 
         if (taskToUpdate.isHabit && taskToUpdate.status === 'selected') {
-            // If it's a habit from 'selected' column
             if (newStatus === null || newStatus !== 'selected') {
-                // If dropped outside any column, or into a non-selected column, delete it
-                tasksCache = tasksCache.filter(t => String(t.id) !== transferredId);
+                tasksCache = tasksCache.filter(t => String(t.id) !== taskId);
                 render();
             }
-            // If newStatus is 'selected', it was dropped back into the selected column, do nothing.
-        } else if (targetColumn && taskToUpdate.status !== newStatus) {
-            // Regular task or habit not from 'selected' column, and dropped into a valid column
+        } else if (newStatus && taskToUpdate.status !== newStatus) {
             taskToUpdate.status = newStatus;
             taskToUpdate.completed = newStatus === 'done';
-            if (!taskToUpdate.isHabit) { // Only update in DB if it's a real task
+            if (!taskToUpdate.isHabit) {
                 await window.db.updateItem('tasks', taskToUpdate);
             }
             render();
         }
+    }
+
+    async function handleGlobalDrop(event) {
+        event.preventDefault();
+        const transferredId = event.dataTransfer.getData('text/plain');
+        const targetColumn = event.target.closest('.kanban-column');
+        const newStatus = targetColumn ? targetColumn.dataset.status : null;
+        updateTaskStatus(transferredId, newStatus);
     }
 
     // --- AI PLANNER ---
@@ -394,17 +393,9 @@ document.addEventListener('DOMContentLoaded', () => {
             const touch = e.changedTouches[0];
             const dropTarget = document.elementFromPoint(touch.clientX, touch.clientY);
             const targetColumn = dropTarget ? dropTarget.closest('.kanban-column') : null;
+            const newStatus = targetColumn ? targetColumn.dataset.status : null;
 
-            if (targetColumn) {
-                const event = new DragEvent('drop', {
-                    bubbles: true,
-                    cancelable: true,
-                    dataTransfer: {
-                        getData: () => draggedItem.dataset.id
-                    }
-                });
-                targetColumn.dispatchEvent(event);
-            }
+            updateTaskStatus(draggedItem.dataset.id, newStatus);
 
             document.body.removeChild(ghostElement);
             draggedItem = null;
