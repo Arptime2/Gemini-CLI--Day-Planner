@@ -356,10 +356,19 @@ document.addEventListener('DOMContentLoaded', () => {
     let draggedItem = null;
     let ghostElement = null;
     let lastOverColumn = null;
+    let columnRects = [];
+
+    function cacheColumnRects() {
+        columnRects = [];
+        document.querySelectorAll('.kanban-column').forEach(column => {
+            columnRects.push(column.getBoundingClientRect());
+        });
+    }
 
     taskListContainer.addEventListener('touchstart', e => {
         const target = e.target.closest('.kanban-card');
         if (target) {
+            cacheColumnRects(); // Cache the geometry on drag start
             draggedItem = target;
             const rect = target.getBoundingClientRect();
             ghostElement = target.cloneNode(true);
@@ -387,17 +396,24 @@ document.addEventListener('DOMContentLoaded', () => {
             ghostElement.style.left = `${touch.clientX - ghostElement.offsetWidth / 2}px`;
             ghostElement.style.top = `${touch.clientY - ghostElement.offsetHeight / 2}px`;
 
-            const dropTarget = document.elementFromPoint(touch.clientX, touch.clientY);
-            const targetColumn = dropTarget ? dropTarget.closest('.kanban-column') : null;
+            // Manual hit-testing
+            let overColumn = null;
+            for (let i = 0; i < columnRects.length; i++) {
+                const rect = columnRects[i];
+                if (touch.clientX > rect.left && touch.clientX < rect.right && touch.clientY > rect.top && touch.clientY < rect.bottom) {
+                    overColumn = document.querySelectorAll('.kanban-column')[i];
+                    break;
+                }
+            }
 
-            if (targetColumn !== lastOverColumn) {
+            if (overColumn !== lastOverColumn) {
                 if (lastOverColumn) {
                     lastOverColumn.classList.remove('drag-over');
                 }
-                if (targetColumn) {
-                    targetColumn.classList.add('drag-over');
+                if (overColumn) {
+                    overColumn.classList.add('drag-over');
                 }
-                lastOverColumn = targetColumn;
+                lastOverColumn = overColumn;
             }
         }
     });
