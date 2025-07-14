@@ -12,10 +12,11 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentView = 'list';
     let tasksCache = [];
     let habitsCache = [];
+    let selectedHabitsCache = [];
 
     // --- INITIALIZATION ---
     async function init() {
-        [tasksCache, habitsCache, selectedHabits] = await Promise.all([
+        [tasksCache, habitsCache, selectedHabitsCache] = await Promise.all([
             window.db.getAllItems('tasks'),
             window.db.getAllItems('habits'),
             window.db.getAllItems('selected_habits')
@@ -67,19 +68,17 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
-        const selectedHabits = window.db.getAllItems('selected_habits');
-        selectedHabits.then(habits => {
-            habits.forEach(habit => {
-                const habitTask = {
-                    id: `habit-${habit.id}`,
-                    text: `(Habit) ${habit.text}`,
-                    status: 'selected',
-                    isHabit: true
-                };
-                columns.selected.tasks.push(habitTask);
-            });
+        selectedHabitsCache.forEach(habit => {
+            const habitTask = {
+                id: `habit-${habit.id}`,
+                text: `(Habit) ${habit.text}`,
+                status: 'selected',
+                isHabit: true
+            };
+            columns.selected.tasks.push(habitTask);
+        });
 
-            for (const status in columns) {
+        for (const status in columns) {
                 const column = columns[status];
                 const columnEl = document.createElement('div');
                 columnEl.className = 'kanban-column';
@@ -105,7 +104,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 kanbanBoard.appendChild(columnEl);
             }
-        });
     }
 
     // --- TASK & ELEMENT CREATION ---
@@ -197,24 +195,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- KANBAN DRAG & DROP ---
     async function updateTaskStatus(taskId, newStatus) {
-        const taskToUpdate = tasksCache.find(t => String(t.id) === taskId);
+        const isHabitCard = taskId.startsWith('habit-');
 
-        if (!taskToUpdate) return;
-
-        if (taskToUpdate.isHabit && taskToUpdate.status === 'selected') {
-            if (newStatus === null || newStatus !== 'selected') {
-                const habitId = parseInt(taskId.split('-')[1], 10);
+        if (isHabitCard) {
+            const habitId = parseInt(taskId.split('-')[1], 10);
+            if (newStatus !== 'selected') {
                 await window.db.deleteItem('selected_habits', habitId);
-                tasksCache = tasksCache.filter(t => t.id !== taskId); // Remove from in-memory cache
+                selectedHabitsCache = selectedHabitsCache.filter(h => h.id !== habitId);
                 render();
             }
-        } else if (newStatus && taskToUpdate.status !== newStatus) {
-            taskToUpdate.status = newStatus;
-            taskToUpdate.completed = newStatus === 'done';
-            if (!taskToUpdate.isHabit) {
+        } else {
+            const taskToUpdate = tasksCache.find(t => String(t.id) === taskId);
+            if (taskToUpdate && newStatus && taskToUpdate.status !== newStatus) {
+                taskToUpdate.status = newStatus;
+                taskToUpdate.completed = newStatus === 'done';
                 await window.db.updateItem('tasks', taskToUpdate);
+                render();
             }
-            render();
         }
     }
 
