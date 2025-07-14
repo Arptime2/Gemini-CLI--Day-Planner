@@ -1,6 +1,6 @@
-# Project Zenith: A Privacy-First, AI-Enhanced Productivity App
+# Project Momentum: A Privacy-First, AI-Enhanced Productivity App
 
-**Project Zenith** is a modern, offline-first personal productivity application designed for users who value privacy, speed, and intelligent assistance. All of your data is stored locally in your browser, and no account or internet connection is required for core functionality. Optional, powerful AI features can be enabled by providing your own Groq API key.
+**Project Momentum** is a modern, offline-first personal productivity application designed for users who value privacy, speed, and intelligent assistance. All of your data is stored locally in your browser, and no account or internet connection is required for core functionality. Optional, powerful AI features can be enabled by providing your own Groq API key.
 
 This application is built with vanilla HTML, CSS, and JavaScript, ensuring it is lightweight, fast, and has no external dependencies.
 
