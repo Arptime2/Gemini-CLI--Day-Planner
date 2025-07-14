@@ -347,5 +347,70 @@ document.addEventListener('DOMContentLoaded', () => {
     taskListContainer.addEventListener('dragover', e => e.preventDefault()); // Allow drops anywhere on the container
     taskListContainer.addEventListener('drop', handleGlobalDrop);
 
+    // --- TOUCH DRAG & DROP ---
+    let draggedItem = null;
+    let ghostElement = null;
+    let startX, startY;
+
+    taskListContainer.addEventListener('touchstart', e => {
+        const target = e.target.closest('.kanban-card');
+        if (target) {
+            draggedItem = target;
+            const rect = target.getBoundingClientRect();
+            ghostElement = target.cloneNode(true);
+            ghostElement.style.position = 'absolute';
+            ghostElement.style.width = `${rect.width}px`;
+            ghostElement.style.height = `${rect.height}px`;
+            ghostElement.style.pointerEvents = 'none';
+            ghostElement.style.opacity = '0.8';
+            ghostElement.style.background = 'var(--accent-color)';
+            ghostElement.style.color = 'var(--background-color)';
+            document.body.appendChild(ghostElement);
+
+            const touch = e.touches[0];
+            startX = touch.clientX;
+            startY = touch.clientY;
+
+            ghostElement.style.left = `${touch.clientX - rect.width / 2}px`;
+            ghostElement.style.top = `${touch.clientY - rect.height / 2}px`;
+
+            target.style.opacity = '0.4';
+        }
+    });
+
+    taskListContainer.addEventListener('touchmove', e => {
+        if (draggedItem && ghostElement) {
+            e.preventDefault();
+            const touch = e.touches[0];
+            ghostElement.style.left = `${touch.clientX - ghostElement.offsetWidth / 2}px`;
+            ghostElement.style.top = `${touch.clientY - ghostElement.offsetHeight / 2}px`;
+        }
+    });
+
+    taskListContainer.addEventListener('touchend', e => {
+        if (draggedItem && ghostElement) {
+            draggedItem.style.opacity = '1';
+            ghostElement.style.display = 'none';
+            const touch = e.changedTouches[0];
+            const dropTarget = document.elementFromPoint(touch.clientX, touch.clientY);
+            const targetColumn = dropTarget ? dropTarget.closest('.kanban-column') : null;
+
+            if (targetColumn) {
+                const event = new DragEvent('drop', {
+                    bubbles: true,
+                    cancelable: true,
+                    dataTransfer: {
+                        getData: () => draggedItem.dataset.id
+                    }
+                });
+                targetColumn.dispatchEvent(event);
+            }
+
+            document.body.removeChild(ghostElement);
+            draggedItem = null;
+            ghostElement = null;
+        }
+    });
+
     window.db.initDB().then(init);
 });
