@@ -151,16 +151,7 @@ document.addEventListener('DOMContentLoaded', () => {
             renderNotesList();
         }
 
-        // Show undo notification
-        showUndoNotification(async () => {
-            // User did not press undo, so delete from DB
-            await window.db.deleteItem('notes', noteId);
-        }, () => {
-            // User pressed undo, so add it back to the cache and re-render
-            notesCache.push(noteToDelete);
-            renderNotesList();
-            if(activeNoteId === null) openNote(noteToDelete.id);
-        });
+        await window.db.deleteItem('notes', noteId);
     }
 
     async function summarizeActiveNote() {

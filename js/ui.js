@@ -32,28 +32,5 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    async function scheduleNotifications() {
-        if ('Notification' in window && Notification.permission === 'granted') {
-            const tasks = await window.db.getAllItems('tasks');
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
-
-            tasks.forEach(task => {
-                if (task.dueDate) {
-                    const dueDate = new Date(task.dueDate);
-                    dueDate.setHours(0, 0, 0, 0);
-
-                    if (dueDate.getTime() === today.getTime()) {
-                        new Notification('Task Due Today', {
-                            body: task.text,
-                        });
-                    }
-                }
-            });
-        }
-    }
-
-    if (window.db) {
-        window.db.initDB().then(scheduleNotifications);
-    }
+    
 });

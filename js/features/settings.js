@@ -6,7 +6,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const apiKeyInput = document.getElementById('api-key-input');
     const saveKeyBtn = document.getElementById('save-key-btn');
     const apiKeyStatus = document.getElementById('api-key-status');
-    const enableNotificationsBtn = document.getElementById('enable-notifications-btn');
+    
     const themeToggleBtn = document.getElementById('theme-toggle-btn');
 
     function toggleTheme() {
@@ -90,19 +90,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    function requestNotificationPermission() {
-        if ('Notification' in window) {
-            Notification.requestPermission().then(permission => {
-                if (permission === 'granted') {
-                    alert('Notification permission granted.');
-                } else {
-                    alert('Notification permission denied.');
-                }
-            });
-        } else {
-            alert('This browser does not support notifications.');
-        }
-    }
+    
 
     // Initial theme load
     applyTheme(localStorage.getItem('theme') || 'dark');
@@ -111,7 +99,7 @@ document.addEventListener('DOMContentLoaded', () => {
     importBtn.addEventListener('click', triggerImport);
     importFile.addEventListener('change', importData);
     saveKeyBtn.addEventListener('click', saveApiKey);
-    enableNotificationsBtn.addEventListener('click', requestNotificationPermission);
+    
     themeToggleBtn.addEventListener('click', toggleTheme);
 
     loadApiKey();

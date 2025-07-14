@@ -320,38 +320,7 @@ body.light-theme {
     background: var(--background-color);
 }
 
-/* Undo Notification */
-#undo-notification {
-    position: fixed;
-    bottom: 20px;
-    left: 50%;
-    transform: translateX(-50%);
-    background-color: #333;
-    color: white;
-    padding: 1rem 2rem;
-    border-radius: 8px;
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    z-index: 2000;
-    opacity: 0;
-    visibility: hidden;
-    transition: opacity 0.3s, visibility 0.3s, transform 0.3s;
-}
 
-#undo-notification.visible {
-    opacity: 1;
-    visibility: visible;
-    transform: translate(-50%, -10px);
-}
-
-#undo-btn {
-    background: none;
-    border: none;
-    color: var(--accent-color);
-    font-weight: bold;
-    cursor: pointer;
-}
 
 /* Modal Styles */
 .modal-overlay {

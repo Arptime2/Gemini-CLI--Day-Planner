@@ -55,6 +55,10 @@ A visual way to see your time-sensitive tasks.
 *   **Data Management:** Export all of your application data (tasks, habits, notes) to a single JSON file for backup. You can import this file later to restore your data.
 *   **AI Integration:** Securely enter and save your Groq API key to enable all AI-powered features.
 
+## Dependencies
+
+This project is committed to being entirely self-contained. It does not and will not use any external libraries or packages. All functionality is built using standard, built-in features of HTML, CSS, and JavaScript.
+
 ## How to Run the Application Locally
 
 This application must be served by a local web server for all features (especially the offline mode) to work correctly.
