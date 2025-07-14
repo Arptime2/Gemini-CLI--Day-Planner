@@ -349,7 +349,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- TOUCH DRAG & DROP ---
     let draggedItem = null;
     let ghostElement = null;
-    let startX, startY;
+    let lastOverColumn = null;
 
     taskListContainer.addEventListener('touchstart', e => {
         const target = e.target.closest('.kanban-card');
@@ -367,9 +367,6 @@ document.addEventListener('DOMContentLoaded', () => {
             document.body.appendChild(ghostElement);
 
             const touch = e.touches[0];
-            startX = touch.clientX;
-            startY = touch.clientY;
-
             ghostElement.style.left = `${touch.clientX - rect.width / 2}px`;
             ghostElement.style.top = `${touch.clientY - rect.height / 2}px`;
 
@@ -383,23 +380,35 @@ document.addEventListener('DOMContentLoaded', () => {
             const touch = e.touches[0];
             ghostElement.style.left = `${touch.clientX - ghostElement.offsetWidth / 2}px`;
             ghostElement.style.top = `${touch.clientY - ghostElement.offsetHeight / 2}px`;
+
+            const dropTarget = document.elementFromPoint(touch.clientX, touch.clientY);
+            const targetColumn = dropTarget ? dropTarget.closest('.kanban-column') : null;
+
+            if (targetColumn !== lastOverColumn) {
+                if (lastOverColumn) {
+                    lastOverColumn.classList.remove('drag-over');
+                }
+                if (targetColumn) {
+                    targetColumn.classList.add('drag-over');
+                }
+                lastOverColumn = targetColumn;
+            }
         }
     });
 
     taskListContainer.addEventListener('touchend', e => {
         if (draggedItem && ghostElement) {
             draggedItem.style.opacity = '1';
-            ghostElement.style.display = 'none';
-            const touch = e.changedTouches[0];
-            const dropTarget = document.elementFromPoint(touch.clientX, touch.clientY);
-            const targetColumn = dropTarget ? dropTarget.closest('.kanban-column') : null;
-            const newStatus = targetColumn ? targetColumn.dataset.status : null;
-
-            updateTaskStatus(draggedItem.dataset.id, newStatus);
+            if (lastOverColumn) {
+                lastOverColumn.classList.remove('drag-over');
+                const newStatus = lastOverColumn.dataset.status;
+                updateTaskStatus(draggedItem.dataset.id, newStatus);
+            }
 
             document.body.removeChild(ghostElement);
             draggedItem = null;
             ghostElement = null;
+            lastOverColumn = null;
         }
     });
 

@@ -194,6 +194,8 @@ nav a:hover, nav a.active {
 .kanban-card { background-color: var(--background-color); padding: 1rem; border-radius: 5px; margin-bottom: 1rem; cursor: grab; transition: box-shadow 0.2s; }
 .kanban-card:hover { box-shadow: 0 0 10px var(--shadow-color); }
 
+.kanban-column.drag-over { background-color: rgba(0, 255, 255, 0.1); }
+
 /* Habit Visualizations */
 #habit-visualizations h2 { text-align: center; color: var(--accent-color); }
 .habit-visualization-item { margin-bottom: 2rem; }
