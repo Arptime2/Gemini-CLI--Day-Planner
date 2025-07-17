@@ -132,150 +132,121 @@ document.addEventListener('DOMContentLoaded', () => {
     async function handleConnectNewDevice() {
         const modalOverlay = document.createElement('div');
         modalOverlay.className = 'modal-overlay';
-        modalOverlay.innerHTML = `
-            <div class="modal-content">
-                <button class="modal-close-btn">❌</button>
-                <h2>Connect New Device</h2>
-                <p id="sync-status-message">Choose an option:</p>
-                <div id="qr-code-display" style="text-align: center; margin: 1rem 0;"></div>
-                <button id="generate-offer-btn" class="button-primary">Generate Offer</button>
-                <button id="scan-offer-btn" class="button-primary">Scan Offer</button>
-                <button id="scan-answer-qr-btn" class="button-primary" style="display: none;">Scan Answer QR</button>
-                <button id="copy-offer-btn" class="button-primary">Copy Offer</button>
-                <button id="push-data-btn" class="button-primary" style="display: none;">Push Data</button>
-                <button id="pull-data-btn" class="button-primary" style="display: none;">Pull Data</button>
-            </div>
-                <button id="copy-answer-btn" class="button-primary" style="display: none;">Copy Answer</button>
-                <button id="push-data-btn" class="button-primary" style="display: none;">Push Data</button>
-                <button id="pull-data-btn" class="button-primary" style="display: none;">Pull Data</button>
-            </div>
-        `;
         document.body.appendChild(modalOverlay);
         document.body.classList.add('modal-open');
 
-        const qrCodeDisplay = document.getElementById('qr-code-display');
-        const syncStatusMessage = document.getElementById('sync-status-message');
-        const generateOfferBtn = document.getElementById('generate-offer-btn');
-        const scanOfferBtn = document.getElementById('scan-offer-btn');
-        const scanAnswerQrBtn = document.getElementById('scan-answer-qr-btn');
-        const copyOfferBtn = document.getElementById('copy-offer-btn');
-        const copyAnswerBtn = document.getElementById('copy-answer-btn');
-        const pushDataBtn = document.getElementById('push-data-btn');
-        const pullDataBtn = document.getElementById('pull-data-btn');
+        const modalContent = document.createElement('div');
+        modalContent.className = 'modal-content';
+        modalOverlay.appendChild(modalContent);
 
-        modalOverlay.querySelector('.modal-close-btn').addEventListener('click', () => {
+        const closeBtn = document.createElement('button');
+        closeBtn.className = 'modal-close-btn';
+        closeBtn.textContent = '❌';
+        closeBtn.onclick = () => {
             document.body.removeChild(modalOverlay);
             document.body.classList.remove('modal-open');
             window.sync.closeConnection();
-        });
+        };
+        modalContent.appendChild(closeBtn);
 
-        generateOfferBtn.onclick = async () => {
-            syncStatusMessage.textContent = 'Generating offer...';
-            generateOfferBtn.style.display = 'none';
-            scanOfferBtn.style.display = 'none';
+        const statusMessage = document.createElement('p');
+        statusMessage.id = 'sync-status-message';
+        modalContent.appendChild(statusMessage);
+
+        const qrCodeDisplay = document.createElement('div');
+        qrCodeDisplay.id = 'qr-code-display';
+        qrCodeDisplay.style.textAlign = 'center';
+        qrCodeDisplay.style.margin = '1rem 0';
+        modalContent.appendChild(qrCodeDisplay);
+
+        const showChoice = () => {
+            statusMessage.textContent = 'Is this device sending or receiving the connection?';
+            const sendingBtn = document.createElement('button');
+            sendingBtn.className = 'button-primary';
+            sendingBtn.textContent = 'Sending';
+            sendingBtn.onclick = () => generateOffer();
+            modalContent.appendChild(sendingBtn);
+
+            const receivingBtn = document.createElement('button');
+            receivingBtn.className = 'button-primary';
+            receivingBtn.textContent = 'Receiving';
+            receivingBtn.onclick = () => scanOffer();
+            modalContent.appendChild(receivingBtn);
+        };
+
+        const generateOffer = async () => {
+            modalContent.innerHTML = ''; // Clear content
+            modalContent.appendChild(closeBtn);
+            modalContent.appendChild(statusMessage);
+            modalContent.appendChild(qrCodeDisplay);
+            statusMessage.textContent = 'Generating connection offer...';
             try {
                 const offerSdp = await window.sync.createOffer();
                 const qrSvg = window.qrcode.generateQRCodeSVG(offerSdp);
                 qrCodeDisplay.innerHTML = qrSvg;
-                syncStatusMessage.textContent = 'Scan this QR code on the other device.';
-                scanAnswerQrBtn.style.display = 'block';
-                copyOfferBtn.style.display = 'block';
-                copyOfferBtn.onclick = () => {
-                    navigator.clipboard.writeText(offerSdp).then(() => {
-                        alert('Offer copied to clipboard!');
-                    }).catch(err => {
-                        console.error('Could not copy text: ', err);
-                    });
-                };
-
-                scanAnswerQrBtn.onclick = async () => {
-                    syncStatusMessage.textContent = 'Scanning for answer...';
-                    qrCodeDisplay.innerHTML = ''; // Clear QR code display
-                    const answerSdp = await window.qrcode.scanQRCode();
-                    if (answerSdp) {
-                        try {
-                            await window.sync.setRemoteAnswer(answerSdp);
-                            syncStatusMessage.textContent = 'Connection established!';
-                            scanAnswerQrBtn.style.display = 'none';
-                            copyOfferBtn.style.display = 'none';
-                            promptAndSavePeer();
-                        } catch (error) {
-                            syncStatusMessage.textContent = 'Failed to establish connection. Try again.';
-                            console.error('Error setting remote answer:', error);
-                        }
-                    } else {
-                        syncStatusMessage.textContent = 'No answer received.';
-                    }
-                };
-
-                window.sync.setOnConnectionStatusChange((status) => {
-                    if (status === 'connected') {
-                        syncStatusMessage.textContent = 'Connected!';
-                        scanAnswerQrBtn.style.display = 'none';
-                        copyOfferBtn.style.display = 'none';
-                        pushDataBtn.style.display = 'block';
-                        pullDataBtn.style.display = 'block';
-                        promptAndSavePeer();
-                    } else if (status === 'disconnected') {
-                        syncStatusMessage.textContent = 'Disconnected.';
-                        pushDataBtn.style.display = 'none';
-                        pullDataBtn.style.display = 'none';
-                    } else {
-                        syncStatusMessage.textContent = `Connection status: ${status}`;
-                    }
-                });
-
+                statusMessage.textContent = 'Scan this QR code on the other device.';
+                await waitForAnswer();
             } catch (error) {
-                syncStatusMessage.textContent = 'Error generating offer.';
+                statusMessage.textContent = 'Error generating offer. Please try again.';
                 console.error('Error creating offer:', error);
             }
         };
 
-        scanOfferBtn.onclick = async () => {
-            syncStatusMessage.textContent = 'Scanning for offer...';
-            generateOfferBtn.style.display = 'none';
-            scanOfferBtn.style.display = 'none';
-            qrCodeDisplay.innerHTML = ''; // Clear QR code display
-            const offerSdp = await window.qrcode.scanQRCode();
-            if (offerSdp) {
-                try {
+        const scanOffer = async () => {
+            modalContent.innerHTML = ''; // Clear content
+            modalContent.appendChild(closeBtn);
+            modalContent.appendChild(statusMessage);
+            modalContent.appendChild(qrCodeDisplay);
+            statusMessage.textContent = 'Scanning for a connection offer...';
+            try {
+                const offerSdp = await window.qrcode.scanQRCode();
+                if (offerSdp) {
+                    statusMessage.textContent = 'Offer received. Generating answer...';
                     const answerSdp = await window.sync.createAnswer(offerSdp);
                     const qrSvg = window.qrcode.generateQRCodeSVG(answerSdp);
                     qrCodeDisplay.innerHTML = qrSvg;
-                    syncStatusMessage.textContent = 'Scan this QR code on the other device.';
-                    copyAnswerBtn.style.display = 'block';
-                    copyAnswerBtn.onclick = () => {
-                        navigator.clipboard.writeText(answerSdp).then(() => {
-                            alert('Answer copied to clipboard!');
-                        }).catch(err => {
-                            console.error('Could not copy text: ', err);
-                        });
-                    };
-
-                    window.sync.setOnConnectionStatusChange((status) => {
-                        if (status === 'connected') {
-                            syncStatusMessage.textContent = 'Connected!';
-                            copyAnswerBtn.style.display = 'none';
-                            pushDataBtn.style.display = 'block';
-                            pullDataBtn.style.display = 'block';
-                            promptAndSavePeer();
-                        } else if (status === 'disconnected') {
-                            syncStatusMessage.textContent = 'Disconnected.';
-                            pushDataBtn.style.display = 'none';
-                            pullDataBtn.style.display = 'none';
-                        } else {
-                            syncStatusMessage.textContent = `Connection status: ${status}`;
-                        }
-                    });
-
-                } catch (error) {
-                    syncStatusMessage.textContent = 'Failed to create answer. Try again.';
-                    console.error('Error creating answer:', error);
+                    statusMessage.textContent = 'Scan this QR code on the first device to complete the connection.';
+                } else {
+                    statusMessage.textContent = 'No offer received. Please try again.';
                 }
-            } else {
-                syncStatusMessage.textContent = 'No offer received.';
+            } catch (error) {
+                statusMessage.textContent = 'Error scanning offer. Please try again.';
+                console.error('Error scanning offer:', error);
             }
         };
+
+        const waitForAnswer = async () => {
+            statusMessage.textContent = 'Waiting for an answer...';
+            try {
+                const answerSdp = await window.qrcode.scanQRCode();
+                if (answerSdp) {
+                    statusMessage.textContent = 'Answer received. Establishing connection...';
+                    await window.sync.setRemoteAnswer(answerSdp);
+                    statusMessage.textContent = 'Connection established!';
+                    promptAndSavePeer();
+                } else {
+                    statusMessage.textContent = 'No answer received. Please try again.';
+                }
+            } catch (error) {
+                statusMessage.textContent = 'Error receiving answer. Please try again.';
+                console.error('Error receiving answer:', error);
+            }
+        };
+
+        window.sync.setOnConnectionStatusChange((status) => {
+            if (status === 'connected') {
+                statusMessage.textContent = 'Connected!';
+                disconnectDeviceBtn.style.display = 'block';
+                promptAndSavePeer();
+            } else if (status === 'disconnected') {
+                statusMessage.textContent = 'Disconnected.';
+                disconnectDeviceBtn.style.display = 'none';
+            } else {
+                statusMessage.textContent = `Connection status: ${status}`;
+            }
+        });
+
+        showChoice();
     }
 
     function handleDisconnectDevice() {
@@ -308,96 +279,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    async function connectToRememberedPeer(peerId) {
-        const peer = rememberedPeers.find(p => p.id === peerId);
-        if (!peer) return;
-
-        const modalOverlay = document.createElement('div');
-        modalOverlay.className = 'modal-overlay';
-        modalOverlay.innerHTML = `
-            <div class="modal-content">
-                <button class="modal-close-btn">❌</button>
-                <h2>Connect to ${peer.name}</h2>
-                <p id="sync-status-message">Generating offer...</p>
-                <div id="qr-code-display" style="text-align: center; margin: 1rem 0;"></div>
-                <button id="scan-answer-qr-btn" class="button-primary" style="display: none;">Scan Answer QR</button>
-                <button id="copy-offer-btn" class="button-primary">Copy Offer</button>
-                <button id="push-data-btn" class="button-primary" style="display: none;">Push Data</button>
-                <button id="pull-data-btn" class="button-primary" style="display: none;">Pull Data</button>
-            </div>
-        `;
-        document.body.appendChild(modalOverlay);
-        document.body.classList.add('modal-open');
-
-        const qrCodeDisplay = document.getElementById('qr-code-display');
-        const syncStatusMessage = document.getElementById('sync-status-message');
-        const scanAnswerQrBtn = document.getElementById('scan-answer-qr-btn');
-        const copyOfferBtn = document.getElementById('copy-offer-btn');
-        const pushDataBtn = document.getElementById('push-data-btn');
-        const pullDataBtn = document.getElementById('pull-data-btn');
-
-        modalOverlay.querySelector('.modal-close-btn').addEventListener('click', () => {
-            document.body.removeChild(modalOverlay);
-            document.body.classList.remove('modal-open');
-            window.sync.closeConnection();
-        });
-
-        try {
-            const offerSdp = await window.sync.createOffer();
-            const qrSvg = window.qrcode.generateQRCodeSVG(offerSdp);
-            qrCodeDisplay.innerHTML = qrSvg;
-            syncStatusMessage.textContent = 'Scan this QR code on the other device.';
-            scanAnswerQrBtn.style.display = 'block';
-            copyOfferBtn.onclick = () => {
-                navigator.clipboard.writeText(offerSdp).then(() => {
-                    alert('Offer copied to clipboard!');
-                }).catch(err => {
-                    console.error('Could not copy text: ', err);
-                });
-            };
-
-            scanAnswerQrBtn.onclick = async () => {
-                syncStatusMessage.textContent = 'Scanning for answer...';
-                qrCodeDisplay.innerHTML = ''; // Clear QR code display
-                const answerSdp = await window.qrcode.scanQRCode();
-                if (answerSdp) {
-                    try {
-                        await window.sync.setRemoteAnswer(answerSdp);
-                        syncStatusMessage.textContent = 'Connection established!';
-                        scanAnswerQrBtn.style.display = 'none';
-                        copyOfferBtn.style.display = 'none';
-                        pushDataBtn.style.display = 'block';
-                        pullDataBtn.style.display = 'block';
-                    } catch (error) {
-                        syncStatusMessage.textContent = 'Failed to establish connection. Try again.';
-                        console.error('Error setting remote answer:', error);
-                    }
-                } else {
-                    syncStatusMessage.textContent = 'No answer received.';
-                }
-            };
-
-            window.sync.setOnConnectionStatusChange((status) => {
-                if (status === 'connected') {
-                    syncStatusMessage.textContent = 'Connected!';
-                    scanAnswerQrBtn.style.display = 'none';
-                    copyOfferBtn.style.display = 'none';
-                    pushDataBtn.style.display = 'block';
-                    pullDataBtn.style.display = 'block';
-                } else if (status === 'disconnected') {
-                    syncStatusMessage.textContent = 'Disconnected.';
-                    pushDataBtn.style.display = 'none';
-                    pullDataBtn.style.display = 'none';
-                } else {
-                    syncStatusMessage.textContent = `Connection status: ${status}`;
-                }
-            });
-
-        } catch (error) {
-            syncStatusMessage.textContent = 'Error generating offer.';
-            console.error('Error creating offer:', error);
-        }
-    }
+    
 
     // Initial theme load
     window.applyTheme(localStorage.getItem('theme') || 'dark');
@@ -415,8 +297,7 @@ document.addEventListener('DOMContentLoaded', () => {
     peerListContainer.addEventListener('click', (event) => {
         const target = event.target;
         if (target.classList.contains('connect-peer-btn')) {
-            const peerId = target.dataset.peerId;
-            connectToRememberedPeer(peerId);
+            handleConnectNewDevice();
         } else if (target.classList.contains('rename-peer-btn')) {
             const peerId = target.dataset.peerId;
             handleRenamePeer(peerId);
