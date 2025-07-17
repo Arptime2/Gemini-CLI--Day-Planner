@@ -163,5 +163,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 <button id="push-data-btn" class="button-primary" style="display: none;">Push Data</button>
                 <button id="pull-data-btn" class="button-primary" style="display: none;">Pull Data</button>
             </div>
+        `;
         
         
