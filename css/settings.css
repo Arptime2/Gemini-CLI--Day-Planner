@@ -100,20 +100,22 @@
     height: 90vh;
     max-width: 90vh;
     background-color: var(--background-color);
-    padding: 2rem;
+    padding: 1rem;
     border-radius: 10px;
     display: flex;
     flex-direction: column;
-    justify-content: center;
+    justify-content: space-between; /* Changed */
     align-items: center;
+    position: relative; /* Added */
 }
 
 #qr-code-display {
+    flex-grow: 1; /* Added */
     width: 100%;
-    height: 100%;
     display: flex;
     justify-content: center;
     align-items: center;
+    min-height: 0; /* Added */
 }
 
 #qr-code-display img {
