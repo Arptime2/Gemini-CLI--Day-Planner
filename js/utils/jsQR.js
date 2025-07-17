@@ -14,12 +14,12 @@ Object.defineProperty(exports, "__esModule", { value: true });
 var binarizer_1 = require("./binarizer");
 var decoder_1 = require("./decoder");
 var locator_1 = require("./locator");
-var "preprocessor_1" = require("./"preprocessor"");
+var preprocessor_1 = require("./preprocessor");
 function jsQR(data, width, height, options) {
     var _a;
     var inverted = !!(options && options.inversionAttempt);
-    var "preprocessed" = (0, "preprocessor_1"."preprocess)(data, width, height, inverted);
-    var binarized = (0, binarizer_1.binarize)("preprocessed".data, "preprocessed".width, "preprocessed".height, inverted);
+    var preprocessed = (0, preprocessor_1.preprocess)(data, width, height, inverted);
+    var binarized = (0, binarizer_1.binarize)(preprocessed.data, preprocessed.width, preprocessed.height, inverted);
     var location = (0, locator_1.locate)(binarized.binarized);
     if (!location) {
         return null;
