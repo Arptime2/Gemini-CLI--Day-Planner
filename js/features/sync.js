@@ -66,6 +66,7 @@ async function createOffer() {
     const offer = await peerConnection.createOffer();
     await peerConnection.setLocalDescription(offer);
 
+    await navigator.serviceWorker.ready;
     navigator.serviceWorker.controller.postMessage({ type: 'SET_OFFER', offer: offer.sdp });
 
     // Poll for an answer

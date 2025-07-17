@@ -139,9 +139,13 @@ document.addEventListener('DOMContentLoaded', () => {
     importFile.addEventListener('change', importData);
     saveKeyBtn.addEventListener('click', saveApiKey);
     themeToggleBtn.addEventListener('click', toggleTheme);
-    connectNewDeviceBtn.addEventListener('click', handleConnectNewDevice);
-    disconnectDeviceBtn.addEventListener('click', () => window.sync.closeConnection());
+    // Wait for the service worker to be ready before enabling sync functionality
+    navigator.serviceWorker.ready.then(() => {
+        console.log('Service Worker is ready.');
+        connectNewDeviceBtn.addEventListener('click', handleConnectNewDevice);
+        disconnectDeviceBtn.addEventListener('click', () => window.sync.closeConnection());
+        autoConnect();
+    });
 
     loadApiKey();
-    autoConnect();
 });
