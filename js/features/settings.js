@@ -182,8 +182,7 @@ document.addEventListener('DOMContentLoaded', () => {
             statusMessage.textContent = 'Generating connection offer...';
             try {
                 const offerSdp = await window.sync.createOffer();
-                const qrCanvas = window.qrcode.generateQRCode(offerSdp);
-                qrCodeDisplay.appendChild(qrCanvas);
+                window.qrcode.generateQRCode(qrCodeDisplay, offerSdp);
                 statusMessage.textContent = 'Scan this QR code on the other device.';
                 await waitForAnswer();
             } catch (error) {
@@ -203,8 +202,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (offerSdp) {
                     statusMessage.textContent = 'Offer received. Generating answer...';
                     const answerSdp = await window.sync.createAnswer(offerSdp);
-                    const qrCanvas = window.qrcode.generateQRCode(answerSdp);
-                    qrCodeDisplay.appendChild(qrCanvas);
+                    window.qrcode.generateQRCode(qrCodeDisplay, answerSdp);
                     statusMessage.textContent = 'Scan this QR code on the first device to complete the connection.';
                 } else {
                     statusMessage.textContent = 'No offer received. Please try again.';
