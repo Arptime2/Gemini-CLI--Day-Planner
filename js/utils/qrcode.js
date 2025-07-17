@@ -38,7 +38,7 @@ function scanQRCodeManual() {
     });
 }
 
-async function scanQRCodeWithCamera() {
+async function scanQRCode() {
     return new Promise(async (resolve) => {
         const video = document.createElement('video');
         video.style.width = '100%';
@@ -94,10 +94,5 @@ async function scanQRCodeWithCamera() {
 window.qrcode = {
     generateQRCodeSVG,
     scanQRCodeManual,
-    scanQRCodeWithCamera
-};
-
-window.qrcode = {
-    generateQRCodeSVG,
     scanQRCode
 };
