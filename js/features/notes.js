@@ -122,6 +122,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (note.title !== newTitle || note.content !== newContent) {
             note.title = newTitle;
             note.content = newContent;
+            note.lastModified = new Date().toISOString();
             await window.db.updateItem('notes', note);
             
             const listItem = notesListEl.querySelector(`[data-note-id="${activeNoteId}"]`);

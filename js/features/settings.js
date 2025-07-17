@@ -9,6 +9,24 @@ document.addEventListener('DOMContentLoaded', () => {
     
     const themeToggleBtn = document.getElementById('theme-toggle-btn');
 
+    // New elements for Device Sync
+    const peerListContainer = document.getElementById('peer-list-container');
+    const connectNewDeviceBtn = document.getElementById('connect-new-device-btn');
+    const disconnectDeviceBtn = document.getElementById('disconnect-device-btn');
+
+    let rememberedPeers = [];
+
+    function loadRememberedPeers() {
+        const storedPeers = localStorage.getItem('momentum_remembered_peers');
+        if (storedPeers) {
+            rememberedPeers = JSON.parse(storedPeers);
+        }
+    }
+
+    function saveRememberedPeers() {
+        localStorage.setItem('momentum_remembered_peers', JSON.stringify(rememberedPeers));
+    }
+
     function toggleTheme() {
         const currentTheme = localStorage.getItem('theme') || 'dark';
         const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
@@ -92,14 +110,84 @@ document.addEventListener('DOMContentLoaded', () => {
 
     
 
-    // Initial theme load
-    applyTheme(localStorage.getItem('theme') || 'dark');
+    function loadRememberedPeers() {
+        const storedPeers = localStorage.getItem('momentum_remembered_peers');
+        if (storedPeers) {
+            rememberedPeers = JSON.parse(storedPeers);
+        }
+    }
 
+    function saveRememberedPeers() {
+        localStorage.setItem('momentum_remembered_peers', JSON.stringify(rememberedPeers));
+    }
+
+    function renderPeerList() {
+        peerListContainer.innerHTML = '';
+        if (rememberedPeers.length === 0) {
+            peerListContainer.innerHTML = '<p>No remembered devices. Connect a new one!</p>';
+            return;
+        }
+
+        rememberedPeers.forEach(peer => {
+            const peerEl = document.createElement('div');
+            peerEl.className = 'peer-item';
+            peerEl.dataset.peerId = peer.id;
+            peerEl.innerHTML = `
+                <span class="peer-name">${peer.name}</span>
+                <div class="peer-actions">
+                    <button class="button-primary connect-peer-btn" data-peer-id="${peer.id}">Connect</button>
+                    <button class="button-primary rename-peer-btn" data-peer-id="${peer.id}">Rename</button>
+                </div>
+            `;
+            peerListContainer.appendChild(peerEl);
+        });
+    }
+
+    function handleConnectNewDevice() {
+        alert('Connect New Device functionality will be implemented in Phase 3.');
+    }
+
+    function handleDisconnectDevice() {
+        alert('Disconnect Device functionality will be implemented in Phase 3.');
+    }
+
+    function handleRenamePeer(peerId) {
+        const peer = rememberedPeers.find(p => p.id === peerId);
+        if (peer) {
+            const newName = prompt(`Rename ${peer.name}:`, peer.name);
+            if (newName && newName.trim() !== '') {
+                peer.name = newName.trim();
+                saveRememberedPeers();
+                renderPeerList();
+            }
+        }
+    }
+
+    // Initial theme load
+    window.applyTheme(localStorage.getItem('theme') || 'dark');
+
+    // Event Listeners
     exportBtn.addEventListener('click', exportData);
     importBtn.addEventListener('click', triggerImport);
     importFile.addEventListener('change', importData);
     saveKeyBtn.addEventListener('click', saveApiKey);
     themeToggleBtn.addEventListener('click', toggleTheme);
 
+    connectNewDeviceBtn.addEventListener('click', handleConnectNewDevice);
+    disconnectDeviceBtn.addEventListener('click', handleDisconnectDevice);
+
+    peerListContainer.addEventListener('click', (event) => {
+        const target = event.target;
+        if (target.classList.contains('connect-peer-btn')) {
+            const peerId = target.dataset.peerId;
+            alert(`Connecting to peer ${peerId} (functionality in Phase 3)`);
+        } else if (target.classList.contains('rename-peer-btn')) {
+            const peerId = target.dataset.peerId;
+            handleRenamePeer(peerId);
+        }
+    });
+
     loadApiKey();
+    loadRememberedPeers();
+    renderPeerList();
 });

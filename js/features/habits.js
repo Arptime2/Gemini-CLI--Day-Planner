@@ -105,6 +105,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (!habit.completed.includes(todayStr)) {
             habit.completed.push(todayStr);
+            habit.lastModified = new Date().toISOString();
             await window.db.updateItem('habits', habit);
             render();
         }

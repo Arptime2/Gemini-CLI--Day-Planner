@@ -42,3 +42,41 @@
 #import-file {
     display: none;
 }
+
+/* Device Sync Styles */
+#peer-list-container {
+    margin-top: 1rem;
+    border-top: 1px solid var(--subtle-border-color);
+    padding-top: 1rem;
+}
+
+.peer-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.8rem 0;
+    border-bottom: 1px solid rgba(0, 255, 255, 0.1);
+}
+
+.peer-item:last-child {
+    border-bottom: none;
+}
+
+.peer-name {
+    font-weight: bold;
+    color: var(--text-color);
+    flex-grow: 1;
+}
+
+.peer-actions button {
+    margin-left: 0.5rem;
+    padding: 0.4rem 0.8rem;
+    font-size: 0.9rem;
+}
+
+.setting-action {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    align-items: center;
+}

@@ -139,7 +139,7 @@ document.addEventListener('DOMContentLoaded', () => {
         event.preventDefault();
         const text = taskInput.value.trim();
         if (text) {
-            const newTask = { text, completed: false, status: 'todo', dueDate: taskDueDateInput.value };
+            const newTask = { text, completed: false, status: 'todo', dueDate: taskDueDateInput.value, lastModified: new Date().toISOString() };
             const newId = await window.db.addItem('tasks', newTask);
             newTask.id = newId;
             tasksCache.push(newTask);
