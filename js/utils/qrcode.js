@@ -85,14 +85,25 @@ async function scanQRCode() {
         };
 
         try {
-            stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+            const constraints = {
+                video: {
+                    facingMode: 'environment',
+                    width: { ideal: 1280 },
+                    height: { ideal: 720 }
+                }
+            };
+            stream = await navigator.mediaDevices.getUserMedia(constraints);
             video.srcObject = stream;
             video.setAttribute('playsinline', 'true'); // Required for iOS
             await video.play();
             requestAnimationFrame(tick);
         } catch (err) {
             console.error('Error accessing camera: ', err);
-            alert('Could not access camera. Please ensure camera permissions are granted. Falling back to manual input.');
+            let message = 'Could not access camera. Please ensure camera permissions are granted.';
+            if (err.name === 'OverconstrainedError') {
+                message = `The requested camera resolution is not supported by your device.`;
+            }
+            alert(`${message} Falling back to manual input.`);
             stopCamera();
             resolve(scanQRCodeManual());
         }
