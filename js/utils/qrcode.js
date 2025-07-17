@@ -2,8 +2,8 @@ function generateQRCode(element, text) {
     element.innerHTML = '';
     new QRCode(element, {
         text: text,
-        width: 200,
-        height: 200,
+        width: 512,
+        height: 512,
         correctLevel: QRCode.CorrectLevel.H
     });
 }
