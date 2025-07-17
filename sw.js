@@ -34,7 +34,12 @@ self.addEventListener('install', event => {
                 console.log('Opened cache');
                 return cache.addAll(URLS_TO_CACHE);
             })
+            .then(() => self.skipWaiting()) // Force activation of new service worker
     );
+});
+
+self.addEventListener('activate', event => {
+    event.waitUntil(self.clients.claim()); // Take control of all pages
 });
 
 self.addEventListener('fetch', event => {
