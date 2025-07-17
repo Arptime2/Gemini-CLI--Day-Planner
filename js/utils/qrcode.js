@@ -31,12 +31,71 @@ function generateQRCodeSVG(text, size = 200, margin = 10) {
 }
 
 // Simulated QR Code Scanner (prompts user for manual input)
-function scanQRCode() {
+function scanQRCodeManual() {
     return new Promise(resolve => {
         const qrData = prompt("Please manually enter the QR code data from the other device:");
         resolve(qrData);
     });
 }
+
+async function scanQRCodeWithCamera() {
+    return new Promise(async (resolve) => {
+        const video = document.createElement('video');
+        video.style.width = '100%';
+        video.style.height = 'auto';
+        video.autoplay = true;
+        video.playsInline = true;
+
+        const cameraContainer = document.createElement('div');
+        cameraContainer.id = 'camera-feed-container';
+        cameraContainer.style.textAlign = 'center';
+        cameraContainer.appendChild(video);
+
+        const manualInputBtn = document.createElement('button');
+        manualInputBtn.className = 'button-primary';
+        manualInputBtn.textContent = 'Enter Manually';
+        manualInputBtn.style.marginTop = '10px';
+
+        const modalContent = document.querySelector('.modal-content');
+        if (modalContent) {
+            modalContent.appendChild(cameraContainer);
+            modalContent.appendChild(manualInputBtn);
+        }
+
+        manualInputBtn.onclick = () => {
+            if (video.srcObject) {
+                video.srcObject.getTracks().forEach(track => track.stop());
+            }
+            cameraContainer.remove();
+            manualInputBtn.remove();
+            resolve(scanQRCodeManual());
+        };
+
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+            video.srcObject = stream;
+            video.onloadedmetadata = () => {
+                video.play();
+            };
+            alert("Point your camera at the QR code. You will need to manually enter the data you see.");
+        } catch (err) {
+            console.error("Error accessing camera: ", err);
+            alert("Could not access camera. Please ensure camera permissions are granted. Falling back to manual input.");
+            if (video.srcObject) {
+                video.srcObject.getTracks().forEach(track => track.stop());
+            }
+            cameraContainer.remove();
+            manualInputBtn.remove();
+            resolve(scanQRCodeManual());
+        }
+    });
+}
+
+window.qrcode = {
+    generateQRCodeSVG,
+    scanQRCodeManual,
+    scanQRCodeWithCamera
+};
 
 window.qrcode = {
     generateQRCodeSVG,
