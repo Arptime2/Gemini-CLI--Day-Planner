@@ -1,4 +1,3 @@
-
 // js/features/sync.js
 
 let peerConnection = null;
@@ -65,45 +64,17 @@ async function createOffer() {
 
     const offer = await peerConnection.createOffer();
     await peerConnection.setLocalDescription(offer);
-
-    navigator.serviceWorker.controller.postMessage({ type: 'SET_OFFER', offer: offer.sdp });
-
-    // Poll for an answer
-    const pollInterval = setInterval(async () => {
-        const response = await fetch('/webrtc-answer');
-        const data = await response.json();
-        if (data.answer) {
-            clearInterval(pollInterval);
-            await setRemoteAnswer(data.answer);
-        }
-    }, 2000);
+    return offer.sdp;
 }
 
-async function checkForOffer() {
-    const response = await fetch('/webrtc-offer');
-    const data = await response.json();
-    return !!data.offer;
-}
-
-async function discoverAndAnswer() {
-    const response = await fetch('/webrtc-offer');
-    const data = await response.json();
-    const offerSdp = data.offer;
-
+async function createAnswer(offerSdp) {
     peerConnection = createPeerConnection();
     const remoteOffer = new RTCSessionDescription({ type: 'offer', sdp: offerSdp });
     await peerConnection.setRemoteDescription(remoteOffer);
 
     const answer = await peerConnection.createAnswer();
     await peerConnection.setLocalDescription(answer);
-
-    await fetch('/webrtc-answer', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ answer: answer.sdp })
-    });
+    return answer.sdp;
 }
 
 async function setRemoteAnswer(answerSdp) {
@@ -145,8 +116,8 @@ function setOnConnectionStatusChange(callback) {
 
 window.sync = {
     createOffer,
-    checkForOffer,
-    discoverAndAnswer,
+    createAnswer,
+    setRemoteAnswer,
     sendData,
     closeConnection,
     setOnDataReceived,
