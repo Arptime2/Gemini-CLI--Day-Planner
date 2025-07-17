@@ -5,32 +5,57 @@ document.addEventListener('DOMContentLoaded', () => {
     const apiKeyInput = document.getElementById('api-key-input');
     const saveKeyBtn = document.getElementById('save-key-btn');
     const apiKeyStatus = document.getElementById('api-key-status');
-    
     const themeToggleBtn = document.getElementById('theme-toggle-btn');
-
-    // New elements for Device Sync
-    const peerListContainer = document.getElementById('peer-list-container');
+    const syncStatusContainer = document.getElementById('sync-status-container');
     const connectNewDeviceBtn = document.getElementById('connect-new-device-btn');
     const disconnectDeviceBtn = document.getElementById('disconnect-device-btn');
 
-    let rememberedPeers = [];
-
-    function loadRememberedPeers() {
-        const storedPeers = localStorage.getItem('momentum_remembered_peers');
-        if (storedPeers) {
-            rememberedPeers = JSON.parse(storedPeers);
+    async function handleConnectNewDevice() {
+        syncStatusContainer.textContent = 'Broadcasting connection signal...';
+        try {
+            await window.sync.createOffer();
+            syncStatusContainer.textContent = 'Waiting for another device to connect...';
+        } catch (err) {
+            syncStatusContainer.textContent = 'Error starting connection. Please try again.';
+            console.error(err);
         }
     }
 
-    function saveRememberedPeers() {
-        localStorage.setItem('momentum_remembered_peers', JSON.stringify(rememberedPeers));
+    async function autoConnect() {
+        try {
+            const offerExists = await window.sync.checkForOffer();
+            if (offerExists) {
+                syncStatusContainer.textContent = 'Found a device! Connecting...';
+                await window.sync.discoverAndAnswer();
+            }
+        } catch (err) {
+            // No offer found, or an error occurred. Silently ignore.
+        }
     }
+
+    window.sync.setOnConnectionStatusChange((status) => {
+        switch (status) {
+            case 'connected':
+                syncStatusContainer.textContent = 'Connected!';
+                connectNewDeviceBtn.style.display = 'none';
+                disconnectDeviceBtn.style.display = 'block';
+                break;
+            case 'disconnected':
+                syncStatusContainer.textContent = 'Disconnected.';
+                connectNewDeviceBtn.style.display = 'block';
+                disconnectDeviceBtn.style.display = 'none';
+                break;
+            default:
+                syncStatusContainer.textContent = `Status: ${status}`;
+                break;
+        }
+    });
 
     function toggleTheme() {
         const currentTheme = localStorage.getItem('theme') || 'dark';
         const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
         localStorage.setItem('theme', newTheme);
-        window.applyTheme(newTheme); // Call the global function
+        window.applyTheme(newTheme);
     }
 
     async function exportData() {
@@ -107,195 +132,16 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    function renderPeerList() {
-        peerListContainer.innerHTML = '';
-        if (rememberedPeers.length === 0) {
-            peerListContainer.innerHTML = '<p>No remembered devices. Connect a new one!</p>';
-            return;
-        }
-
-        rememberedPeers.forEach(peer => {
-            const peerEl = document.createElement('div');
-            peerEl.className = 'peer-item';
-            peerEl.dataset.peerId = peer.id;
-            peerEl.innerHTML = `
-                <span class="peer-name">${peer.name}</span>
-                <div class="peer-actions">
-                    <button class="button-primary connect-peer-btn" data-peer-id="${peer.id}">Connect</button>
-                    <button class="button-primary rename-peer-btn" data-peer-id="${peer.id}">Rename</button>
-                </div>
-            `;
-            peerListContainer.appendChild(peerEl);
-        });
-    }
-
-    async function handleConnectNewDevice() {
-        const modalOverlay = document.createElement('div');
-        modalOverlay.className = 'modal-overlay';
-        document.body.appendChild(modalOverlay);
-        document.body.classList.add('modal-open');
-
-        const modalContent = document.createElement('div');
-        modalContent.className = 'modal-content';
-        modalOverlay.appendChild(modalContent);
-
-        const closeBtn = document.createElement('button');
-        closeBtn.className = 'modal-close-btn';
-        closeBtn.textContent = '❌';
-        closeBtn.onclick = () => {
-            document.body.removeChild(modalOverlay);
-            document.body.classList.remove('modal-open');
-            window.sync.closeConnection();
-        };
-        modalContent.appendChild(closeBtn);
-
-        const statusMessage = document.createElement('p');
-        statusMessage.id = 'sync-status-message';
-        modalContent.appendChild(statusMessage);
-
-        const actionButton = document.createElement('button');
-        actionButton.className = 'button-primary';
-        modalContent.appendChild(actionButton);
-
-        const showStep1_CreateHotspot = () => {
-            statusMessage.innerHTML = `
-                <b>Step 1:</b> Create the connection hotspot.<br><br>
-                <div style="text-align: left; display: inline-block;">
-                    <b>On your other device, go to Wi-Fi settings and connect to:</b><br>
-                    <b>Network:</b> ZenithConnect<br>
-                    <b>Password:</b> 12345678
-                </div>
-            `;
-            actionButton.textContent = 'Create Hotspot & Wait for Connection';
-            actionButton.onclick = async () => {
-                actionButton.disabled = true;
-                actionButton.textContent = 'Waiting for other device to connect...';
-                try {
-                    await window.sync.createOffer();
-                } catch (err) {
-                    statusMessage.textContent = 'Error creating hotspot. Please try again.';
-                    console.error(err);
-                    actionButton.disabled = false;
-                    actionButton.textContent = 'Create Hotspot & Wait for Connection';
-                }
-            };
-        };
-
-        const showStep2_ConnectToHotspot = () => {
-            statusMessage.innerHTML = `
-                <b>Connect to the hotspot created by your other device.</b><br><br>
-                <div style="text-align: left; display: inline-block;">
-                    <b>Go to your Wi-Fi settings and connect to:</b><br>
-                    <b>Network:</b> ZenithConnect<br>
-                    <b>Password:</b> 12345678
-                </div>
-            `;
-            actionButton.textContent = 'I Have Connected to the Hotspot';
-            actionButton.onclick = async () => {
-                actionButton.disabled = true;
-                actionButton.textContent = 'Searching for other device...';
-                try {
-                    // This is where the magic happens. In a real implementation,
-                    // we would use a discovery mechanism like mDNS or a local network broadcast.
-                    // Since we can't do that, we will simulate the discovery.
-                    await window.sync.discoverAndAnswer();
-                } catch (err) {
-                    statusMessage.textContent = 'Could not find other device. Please ensure you are on the correct Wi-Fi network and try again.';
-                    console.error(err);
-                    actionButton.disabled = false;
-                    actionButton.textContent = 'I Have Connected to the Hotspot';
-                }
-            };
-        };
-
-        const initialChoice = () => {
-            statusMessage.textContent = 'What do you want to do?';
-            actionButton.textContent = 'Connect to another device';
-            actionButton.onclick = showStep2_ConnectToHotspot;
-
-            const createHotspotBtn = document.createElement('button');
-            createHotspotBtn.className = 'button-primary';
-            createHotspotBtn.textContent = 'Create a connection hotspot';
-            createHotspotBtn.onclick = showStep1_CreateHotspot;
-            modalContent.appendChild(createHotspotBtn);
-        };
-
-        window.sync.setOnConnectionStatusChange((status) => {
-            if (status === 'connected') {
-                statusMessage.textContent = 'Connected!';
-                disconnectDeviceBtn.style.display = 'block';
-                if(modalOverlay) {
-                    document.body.removeChild(modalOverlay);
-                    document.body.classList.remove('modal-open');
-                }
-                promptAndSavePeer();
-            } else if (status === 'disconnected') {
-                statusMessage.textContent = 'Disconnected.';
-                disconnectDeviceBtn.style.display = 'none';
-            } else {
-                statusMessage.textContent = `Connection status: ${status}`;
-            }
-        });
-
-        initialChoice();
-    }
-
-    function handleDisconnectDevice() {
-        window.sync.closeConnection();
-        alert('Disconnected.');
-    }
-
-    function handleRenamePeer(peerId) {
-        const peer = rememberedPeers.find(p => p.id === peerId);
-        if (peer) {
-            const newName = prompt(`Rename ${peer.name}:`, peer.name);
-            if (newName && newName.trim() !== '') {
-                peer.name = newName.trim();
-                saveRememberedPeers();
-                renderPeerList();
-            }
-        }
-    }
-
-    function promptAndSavePeer() {
-        const peerName = prompt('Connection successful! Give this device a name:', 'New Device');
-        if (peerName && peerName.trim() !== '') {
-            const newPeer = {
-                id: Date.now().toString(), // Simple unique ID
-                name: peerName.trim()
-            };
-            rememberedPeers.push(newPeer);
-            saveRememberedPeers();
-            renderPeerList();
-        }
-    }
-
-    
-
-    // Initial theme load
     window.applyTheme(localStorage.getItem('theme') || 'dark');
 
-    // Event Listeners
     exportBtn.addEventListener('click', exportData);
     importBtn.addEventListener('click', triggerImport);
     importFile.addEventListener('change', importData);
     saveKeyBtn.addEventListener('click', saveApiKey);
     themeToggleBtn.addEventListener('click', toggleTheme);
-
     connectNewDeviceBtn.addEventListener('click', handleConnectNewDevice);
-    disconnectDeviceBtn.addEventListener('click', handleDisconnectDevice);
-
-    peerListContainer.addEventListener('click', (event) => {
-        const target = event.target;
-        if (target.classList.contains('connect-peer-btn')) {
-            handleConnectNewDevice();
-        } else if (target.classList.contains('rename-peer-btn')) {
-            const peerId = target.dataset.peerId;
-            handleRenamePeer(peerId);
-        }
-    });
+    disconnectDeviceBtn.addEventListener('click', () => window.sync.closeConnection());
 
     loadApiKey();
-    loadRememberedPeers();
-    renderPeerList();
+    autoConnect();
 });

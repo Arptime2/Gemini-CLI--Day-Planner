@@ -1,8 +1,8 @@
+
 // js/features/sync.js
 
 let peerConnection = null;
 let dataChannel = null;
-let isInitiator = false;
 let onDataReceivedCallback = null;
 let onConnectionStatusChangeCallback = null;
 
@@ -18,15 +18,12 @@ function createPeerConnection() {
 
     peerConnection.onicecandidate = (event) => {
         if (event.candidate) {
-            // Send the ICE candidate to the other peer (via QR code or other signaling)
-            console.log('New ICE candidate:', event.candidate);
-            // In a real app, this would be sent over a signaling server.
-            // For this project, we'll display it for manual transfer.
+            // In a real-world application with a proper signaling server,
+            // you would send this ICE candidate to the other peer.
         }
     };
 
     peerConnection.onconnectionstatechange = () => {
-        console.log('Connection state change:', peerConnection.connectionState);
         if (onConnectionStatusChangeCallback) {
             onConnectionStatusChangeCallback(peerConnection.connectionState);
         }
@@ -42,19 +39,16 @@ function createPeerConnection() {
 
 function setupDataChannelListeners() {
     dataChannel.onopen = () => {
-        console.log('Data channel is open!');
         if (onConnectionStatusChangeCallback) {
             onConnectionStatusChangeCallback('connected');
         }
     };
     dataChannel.onmessage = (event) => {
-        console.log('Data channel message:', event.data);
         if (onDataReceivedCallback) {
             onDataReceivedCallback(event.data);
         }
     };
     dataChannel.onclose = () => {
-        console.log('Data channel closed.');
         if (onConnectionStatusChangeCallback) {
             onConnectionStatusChangeCallback('disconnected');
         }
@@ -65,42 +59,56 @@ function setupDataChannelListeners() {
 }
 
 async function createOffer() {
-    isInitiator = true;
     peerConnection = createPeerConnection();
     dataChannel = peerConnection.createDataChannel('syncChannel');
     setupDataChannelListeners();
 
     const offer = await peerConnection.createOffer();
     await peerConnection.setLocalDescription(offer);
-    localStorage.setItem('webrtc_offer', offer.sdp); // Save offer for discovery
-    return offer.sdp;
+
+    navigator.serviceWorker.controller.postMessage({ type: 'SET_OFFER', offer: offer.sdp });
+
+    // Poll for an answer
+    const pollInterval = setInterval(async () => {
+        const response = await fetch('/webrtc-answer');
+        const data = await response.json();
+        if (data.answer) {
+            clearInterval(pollInterval);
+            await setRemoteAnswer(data.answer);
+        }
+    }, 2000);
 }
 
-async function createAnswer(offerSdp) {
-    isInitiator = false;
-    peerConnection = createPeerConnection();
+async function checkForOffer() {
+    const response = await fetch('/webrtc-offer');
+    const data = await response.json();
+    return !!data.offer;
+}
 
+async function discoverAndAnswer() {
+    const response = await fetch('/webrtc-offer');
+    const data = await response.json();
+    const offerSdp = data.offer;
+
+    peerConnection = createPeerConnection();
     const remoteOffer = new RTCSessionDescription({ type: 'offer', sdp: offerSdp });
     await peerConnection.setRemoteDescription(remoteOffer);
 
     const answer = await peerConnection.createAnswer();
     await peerConnection.setLocalDescription(answer);
-    return answer.sdp;
+
+    await fetch('/webrtc-answer', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ answer: answer.sdp })
+    });
 }
 
 async function setRemoteAnswer(answerSdp) {
     const remoteAnswer = new RTCSessionDescription({ type: 'answer', sdp: answerSdp });
     await peerConnection.setRemoteDescription(remoteAnswer);
-    localStorage.removeItem('webrtc_offer'); // Clean up
-    localStorage.removeItem('webrtc_answer'); // Clean up
-}
-
-async function addIceCandidate(candidate) {
-    try {
-        await peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
-    } catch (e) {
-        console.error('Error adding received ICE candidate:', e);
-    }
 }
 
 function sendData(data) {
@@ -122,8 +130,9 @@ function closeConnection() {
         peerConnection.close();
         peerConnection = null;
     }
-    isInitiator = false;
-    console.log('WebRTC connection closed.');
+    if (onConnectionStatusChangeCallback) {
+        onConnectionStatusChangeCallback('disconnected');
+    }
 }
 
 function setOnDataReceived(callback) {
@@ -134,43 +143,13 @@ function setOnConnectionStatusChange(callback) {
     onConnectionStatusChangeCallback = callback;
 }
 
-async function discoverAndAnswer() {
-    // In a real-world scenario, this would involve a discovery mechanism
-    // like mDNS or a local network broadcast to find the offer.
-    // For this simulation, we'll assume the offer is available globally.
-    const offerSdp = await window.sync.scanForOffer();
-    const answerSdp = await createAnswer(offerSdp);
-    await window.sync.sendAnswer(answerSdp);
-}
-
-// Placeholder for a real discovery mechanism
-async function scanForOffer() {
-    return new Promise(resolve => {
-        // This would be replaced with actual network discovery
-        setTimeout(() => {
-            resolve(localStorage.getItem('webrtc_offer'));
-        }, 1000);
-    });
-}
-
-// Placeholder for sending the answer
-async function sendAnswer(answerSdp) {
-    // This would be replaced with sending the answer over the discovered channel
-    localStorage.setItem('webrtc_answer', answerSdp);
-}
-
-
 window.sync = {
     createOffer,
-    createAnswer,
-    setRemoteAnswer,
-    addIceCandidate,
+    checkForOffer,
+    discoverAndAnswer,
     sendData,
     closeConnection,
     setOnDataReceived,
     setOnConnectionStatusChange,
-    discoverAndAnswer,
-    scanForOffer, // For simulation
-    sendAnswer, // For simulation
     get isConnected() { return dataChannel && dataChannel.readyState === 'open'; }
 };

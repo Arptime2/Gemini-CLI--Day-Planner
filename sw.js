@@ -1,73 +1,76 @@
-
-const CACHE_NAME = 'zenith-v21';
-const urlsToCache = [
-    './',
-    './index.html',
-    './tasks.html',
-    './habits.html',
-    './notes.html',
-    './calendar.html',
-    './settings.html',
-    './css/main.css',
-    './css/notes.css',
-    './css/habits.css',
-    './css/settings.css',
-    './css/calendar.css',
-    './js/ui.js',
-    './js/db/database.js',
-    './js/features/tasks.js',
-    './js/features/habits.js',
-    './js/features/notes.js',
-    './js/features/calendar.js',
-    './js/features/settings.js',
-    './js/groq.js',
-    './nav.html'
+const CACHE_NAME = 'momentum-cache-v1';
+const URLS_TO_CACHE = [
+    '/',
+    '/index.html',
+    '/tasks.html',
+    '/habits.html',
+    '/notes.html',
+    '/calendar.html',
+    '/settings.html',
+    '/css/main.css',
+    '/css/calendar.css',
+    '/css/habits.css',
+    '/css/notes.css',
+    '/css/settings.css',
+    '/js/db/database.js',
+    '/js/features/calendar.js',
+    '/js/features/habits.js',
+    '/js/features/notes.js',
+    '/js/features/settings.js',
+    '/js/features/sync.js',
+    '/js/features/tasks.js',
+    '/js/groq.js',
+    '/js/ui.js',
+    '/js/utils/qrcode.js'
 ];
 
-// On install, cache all core assets and take control immediately
+let offerSdp = null;
+let answerSdp = null;
+
 self.addEventListener('install', event => {
     event.waitUntil(
         caches.open(CACHE_NAME)
             .then(cache => {
-                console.log('Opened cache and caching all assets');
-                return cache.addAll(urlsToCache);
+                console.log('Opened cache');
+                return cache.addAll(URLS_TO_CACHE);
             })
-            .then(() => self.skipWaiting()) // Force the waiting service worker to become the active one.
     );
 });
 
-// On activation, remove old caches and take control of all clients
-self.addEventListener('activate', event => {
-    event.waitUntil(
-        caches.keys().then(cacheNames => {
-            return Promise.all(
-                cacheNames.map(cacheName => {
-                    if (cacheName !== CACHE_NAME) {
-                        console.log('Deleting old cache:', cacheName);
-                        return caches.delete(cacheName);
-                    }
-                })
-            );
-        }).then(() => self.clients.claim()) // Take control of all open pages.
-    );
-});
-
-// Fetch event: Use Stale-While-Revalidate strategy
 self.addEventListener('fetch', event => {
-    event.respondWith(
-        caches.open(CACHE_NAME).then(cache => {
-            return cache.match(event.request).then(cachedResponse => {
-                const fetchPromise = fetch(event.request).then(networkResponse => {
-                    // If we got a valid response, update the cache
-                    if (networkResponse && networkResponse.status === 200) {
-                        cache.put(event.request, networkResponse.clone());
-                    }
-                    return networkResponse;
-                });
+    const url = new URL(event.request.url);
 
-                // Return the cached response immediately, and the fetch promise will update the cache in the background.
-                return cachedResponse || fetchPromise;
+    if (url.pathname === '/webrtc-offer') {
+        if (offerSdp) {
+            event.respondWith(new Response(JSON.stringify({ offer: offerSdp }), { headers: { 'Content-Type': 'application/json' } }));
+        } else {
+            event.respondWith(new Response(JSON.stringify({ offer: null }), { headers: { 'Content-Type': 'application/json' } }));
+        }
+    } else if (url.pathname === '/webrtc-answer') {
+        if (event.request.method === 'POST') {
+            event.request.json().then(data => {
+                answerSdp = data.answer;
+                event.respondWith(new Response(JSON.stringify({ success: true }), { headers: { 'Content-Type': 'application/json' } }));
             });
-        })
-    );
+        } else if (answerSdp) {
+            event.respondWith(new Response(JSON.stringify({ answer: answerSdp }), { headers: { 'Content-Type': 'application/json' } }));
+            answerSdp = null; // Clear after sending
+        }
+         else {
+            event.respondWith(new Response(JSON.stringify({ answer: null }), { headers: { 'Content-Type': 'application/json' } }));
+        }
+    } else {
+        event.respondWith(
+            caches.match(event.request)
+                .then(response => {
+                    return response || fetch(event.request);
+                })
+        );
+    }
+});
+
+self.addEventListener('message', event => {
+    if (event.data.type === 'SET_OFFER') {
+        offerSdp = event.data.offer;
+    }
 });
