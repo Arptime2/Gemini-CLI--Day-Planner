@@ -1,4 +1,3 @@
-
 // js/features/sync.js
 
 let peerConnection = null;
@@ -73,6 +72,7 @@ async function createOffer() {
 
     const offer = await peerConnection.createOffer();
     await peerConnection.setLocalDescription(offer);
+    localStorage.setItem('webrtc_offer', offer.sdp); // Save offer for discovery
     return offer.sdp;
 }
 
@@ -91,6 +91,8 @@ async function createAnswer(offerSdp) {
 async function setRemoteAnswer(answerSdp) {
     const remoteAnswer = new RTCSessionDescription({ type: 'answer', sdp: answerSdp });
     await peerConnection.setRemoteDescription(remoteAnswer);
+    localStorage.removeItem('webrtc_offer'); // Clean up
+    localStorage.removeItem('webrtc_answer'); // Clean up
 }
 
 async function addIceCandidate(candidate) {
@@ -132,6 +134,32 @@ function setOnConnectionStatusChange(callback) {
     onConnectionStatusChangeCallback = callback;
 }
 
+async function discoverAndAnswer() {
+    // In a real-world scenario, this would involve a discovery mechanism
+    // like mDNS or a local network broadcast to find the offer.
+    // For this simulation, we'll assume the offer is available globally.
+    const offerSdp = await window.sync.scanForOffer();
+    const answerSdp = await createAnswer(offerSdp);
+    await window.sync.sendAnswer(answerSdp);
+}
+
+// Placeholder for a real discovery mechanism
+async function scanForOffer() {
+    return new Promise(resolve => {
+        // This would be replaced with actual network discovery
+        setTimeout(() => {
+            resolve(localStorage.getItem('webrtc_offer'));
+        }, 1000);
+    });
+}
+
+// Placeholder for sending the answer
+async function sendAnswer(answerSdp) {
+    // This would be replaced with sending the answer over the discovered channel
+    localStorage.setItem('webrtc_answer', answerSdp);
+}
+
+
 window.sync = {
     createOffer,
     createAnswer,
@@ -141,5 +169,8 @@ window.sync = {
     closeConnection,
     setOnDataReceived,
     setOnConnectionStatusChange,
+    discoverAndAnswer,
+    scanForOffer, // For simulation
+    sendAnswer, // For simulation
     get isConnected() { return dataChannel && dataChannel.readyState === 'open'; }
 };

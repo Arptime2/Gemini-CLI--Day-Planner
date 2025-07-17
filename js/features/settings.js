@@ -153,88 +153,81 @@ document.addEventListener('DOMContentLoaded', () => {
         statusMessage.id = 'sync-status-message';
         modalContent.appendChild(statusMessage);
 
-        const qrCodeDisplay = document.createElement('div');
-        qrCodeDisplay.id = 'qr-code-display';
-        qrCodeDisplay.style.textAlign = 'center';
-        qrCodeDisplay.style.margin = '1rem 0';
-        modalContent.appendChild(qrCodeDisplay);
+        const actionButton = document.createElement('button');
+        actionButton.className = 'button-primary';
+        modalContent.appendChild(actionButton);
 
-        const showChoice = () => {
-            statusMessage.textContent = 'Is this device sending or receiving the connection?';
-            const sendingBtn = document.createElement('button');
-            sendingBtn.className = 'button-primary';
-            sendingBtn.textContent = 'Sending';
-            sendingBtn.onclick = () => generateOffer();
-            modalContent.appendChild(sendingBtn);
-
-            const receivingBtn = document.createElement('button');
-            receivingBtn.className = 'button-primary';
-            receivingBtn.textContent = 'Receiving';
-            receivingBtn.onclick = () => scanOffer();
-            modalContent.appendChild(receivingBtn);
-        };
-
-        const generateOffer = async () => {
-            modalContent.innerHTML = ''; // Clear content
-            modalContent.appendChild(closeBtn);
-            modalContent.appendChild(statusMessage);
-            modalContent.appendChild(qrCodeDisplay);
-            statusMessage.textContent = 'Generating connection offer...';
-            try {
-                const offerSdp = await window.sync.createOffer();
-                window.qrcode.generateQRCode(qrCodeDisplay, offerSdp);
-                statusMessage.textContent = 'Scan this QR code on the other device.';
-                await waitForAnswer();
-            } catch (error) {
-                statusMessage.textContent = 'Error generating offer. Please try again.';
-                console.error('Error creating offer:', error);
-            }
-        };
-
-        const scanOffer = async () => {
-            modalContent.innerHTML = ''; // Clear content
-            modalContent.appendChild(closeBtn);
-            modalContent.appendChild(statusMessage);
-            modalContent.appendChild(qrCodeDisplay);
-            statusMessage.textContent = 'Scanning for a connection offer...';
-            try {
-                const offerSdp = await window.qrcode.scanQRCode();
-                if (offerSdp) {
-                    statusMessage.textContent = 'Offer received. Generating answer...';
-                    const answerSdp = await window.sync.createAnswer(offerSdp);
-                    window.qrcode.generateQRCode(qrCodeDisplay, answerSdp);
-                    statusMessage.textContent = 'Scan this QR code on the first device to complete the connection.';
-                } else {
-                    statusMessage.textContent = 'No offer received. Please try again.';
+        const showStep1_CreateHotspot = () => {
+            statusMessage.innerHTML = `
+                <b>Step 1:</b> Create the connection hotspot.<br><br>
+                <div style="text-align: left; display: inline-block;">
+                    <b>On your other device, go to Wi-Fi settings and connect to:</b><br>
+                    <b>Network:</b> ZenithConnect<br>
+                    <b>Password:</b> 12345678
+                </div>
+            `;
+            actionButton.textContent = 'Create Hotspot & Wait for Connection';
+            actionButton.onclick = async () => {
+                actionButton.disabled = true;
+                actionButton.textContent = 'Waiting for other device to connect...';
+                try {
+                    await window.sync.createOffer();
+                } catch (err) {
+                    statusMessage.textContent = 'Error creating hotspot. Please try again.';
+                    console.error(err);
+                    actionButton.disabled = false;
+                    actionButton.textContent = 'Create Hotspot & Wait for Connection';
                 }
-            } catch (error) {
-                statusMessage.textContent = 'Error scanning offer. Please try again.';
-                console.error('Error scanning offer:', error);
-            }
+            };
         };
 
-        const waitForAnswer = async () => {
-            statusMessage.textContent = 'Waiting for an answer...';
-            try {
-                const answerSdp = await window.qrcode.scanQRCode();
-                if (answerSdp) {
-                    statusMessage.textContent = 'Answer received. Establishing connection...';
-                    await window.sync.setRemoteAnswer(answerSdp);
-                    statusMessage.textContent = 'Connection established!';
-                    promptAndSavePeer();
-                } else {
-                    statusMessage.textContent = 'No answer received. Please try again.';
+        const showStep2_ConnectToHotspot = () => {
+            statusMessage.innerHTML = `
+                <b>Connect to the hotspot created by your other device.</b><br><br>
+                <div style="text-align: left; display: inline-block;">
+                    <b>Go to your Wi-Fi settings and connect to:</b><br>
+                    <b>Network:</b> ZenithConnect<br>
+                    <b>Password:</b> 12345678
+                </div>
+            `;
+            actionButton.textContent = 'I Have Connected to the Hotspot';
+            actionButton.onclick = async () => {
+                actionButton.disabled = true;
+                actionButton.textContent = 'Searching for other device...';
+                try {
+                    // This is where the magic happens. In a real implementation,
+                    // we would use a discovery mechanism like mDNS or a local network broadcast.
+                    // Since we can't do that, we will simulate the discovery.
+                    await window.sync.discoverAndAnswer();
+                } catch (err) {
+                    statusMessage.textContent = 'Could not find other device. Please ensure you are on the correct Wi-Fi network and try again.';
+                    console.error(err);
+                    actionButton.disabled = false;
+                    actionButton.textContent = 'I Have Connected to the Hotspot';
                 }
-            } catch (error) {
-                statusMessage.textContent = 'Error receiving answer. Please try again.';
-                console.error('Error receiving answer:', error);
-            }
+            };
+        };
+
+        const initialChoice = () => {
+            statusMessage.textContent = 'What do you want to do?';
+            actionButton.textContent = 'Connect to another device';
+            actionButton.onclick = showStep2_ConnectToHotspot;
+
+            const createHotspotBtn = document.createElement('button');
+            createHotspotBtn.className = 'button-primary';
+            createHotspotBtn.textContent = 'Create a connection hotspot';
+            createHotspotBtn.onclick = showStep1_CreateHotspot;
+            modalContent.appendChild(createHotspotBtn);
         };
 
         window.sync.setOnConnectionStatusChange((status) => {
             if (status === 'connected') {
                 statusMessage.textContent = 'Connected!';
                 disconnectDeviceBtn.style.display = 'block';
+                if(modalOverlay) {
+                    document.body.removeChild(modalOverlay);
+                    document.body.classList.remove('modal-open');
+                }
                 promptAndSavePeer();
             } else if (status === 'disconnected') {
                 statusMessage.textContent = 'Disconnected.';
@@ -244,7 +237,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
-        showChoice();
+        initialChoice();
     }
 
     function handleDisconnectDevice() {
