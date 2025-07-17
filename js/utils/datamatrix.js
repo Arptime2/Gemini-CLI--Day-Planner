@@ -301,9 +301,20 @@ window.datamatrix = {
 
             const codeReader = new ZXingBrowser.BrowserDatamatrixCodeReader();
             try {
-                const result = await codeReader.decodeFromInputVideoDevice(undefined, video);
-                container.remove();
-                resolve(result.getText());
+                const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+                video.srcObject = stream;
+                const result = await codeReader.decodeFromStream(video, stream, (result, err) => {
+                    if (result) {
+                        stream.getTracks().forEach(track => track.stop());
+                        container.remove();
+                        resolve(result.getText());
+                    }
+                    if (err && !(err instanceof ZXing.NotFoundException)) {
+                        stream.getTracks().forEach(track => track.stop());
+                        container.remove();
+                        resolve(null);
+                    }
+                });
             } catch (err) {
                 container.remove();
                 resolve(null); // Resolve with null if scanning is cancelled or fails
