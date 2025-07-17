@@ -76,11 +76,35 @@ async function scanQRCode() {
             video.srcObject = stream;
             video.onloadedmetadata = () => {
                 video.play();
+                requestAnimationFrame(tick);
             };
-            alert("Point your camera at the QR code. You will need to manually enter the data you see.");
+
+            const canvasElement = document.createElement('canvas');
+            const canvas = canvasElement.getContext('2d');
+
+            const tick = () => {
+                if (video.readyState === video.HAVE_ENOUGH_DATA) {
+                    canvasElement.height = video.videoHeight;
+                    canvasElement.width = video.videoWidth;
+                    canvas.drawImage(video, 0, 0, canvasElement.width, canvasElement.height);
+                    const imageData = canvas.getImageData(0, 0, canvasElement.width, canvasElement.height);
+                    const code = jsQR(imageData.data, imageData.width, imageData.height, {
+                        inversionAttempts: 'dontInvert',
+                    });
+
+                    if (code) {
+                        video.srcObject.getTracks().forEach(track => track.stop());
+                        cameraContainer.remove();
+                        manualInputBtn.remove();
+                        resolve(code.data);
+                        return;
+                    }
+                }
+                requestAnimationFrame(tick);
+            };
         } catch (err) {
-            console.error("Error accessing camera: ", err);
-            alert("Could not access camera. Please ensure camera permissions are granted. Falling back to manual input.");
+            console.error('Error accessing camera: ', err);
+            alert('Could not access camera. Please ensure camera permissions are granted. Falling back to manual input.');
             if (video.srcObject) {
                 video.srcObject.getTracks().forEach(track => track.stop());
             }
