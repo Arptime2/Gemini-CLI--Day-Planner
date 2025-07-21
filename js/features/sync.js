@@ -2,7 +2,7 @@ class SignalingChannel {
     constructor(peerId, onMessage) {
         this.peerId = peerId;
         // Using a public signaling server
-        this.ws = new WebSocket(`wss://webrtc-signaling-server.herokuapp.com/${peerId}`);
+        this.ws = new WebSocket(`wss://p2p-beta.vercel.app/${peerId}`);
         this.ws.onmessage = onMessage;
         this.ws.onopen = () => console.log('Signaling channel connected.');
         this.ws.onerror = (err) => console.error('Signaling channel error:', err);
