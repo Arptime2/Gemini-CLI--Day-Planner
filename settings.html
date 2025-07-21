@@ -46,19 +46,33 @@
 
             <section class="card settings-card">
                 <h2>Device Sync</h2>
-                <p>Connect to another device on the same Wi-Fi network to sync your data in real-time. No server or account needed.</p>
-                <div id="sync-status-container" class="sync-status">Waiting for connection...</div>
+                <p>Generate a sync key to connect another device and sync your data in real-time. No server or account needed.</p>
                 <div class="setting-action">
-                    <button id="connect-new-device-btn" class="button-primary">Connect a New Device</button>
-                    <button id="disconnect-device-btn" class="button-primary" style="display: none;">Disconnect</button>
+                    <button id="generate-key-btn" class="button-primary">Generate New Key</button>
+                    <input type="text" id="local-key-display" readonly placeholder="Your sync key will appear here...">
+                </div>
+                <hr>
+                <p>Enter a sync key from another device to add it to your trusted list.</p>
+                <div class="setting-action">
+                    <input type="text" id="remote-key-input" placeholder="Enter remote key...">
+                    <button id="add-device-btn" class="button-primary">Add Device</button>
+                </div>
+                <div id="trusted-devices-container">
+                    <h3>Trusted Devices</h3>
+                    <ul id="trusted-devices-list">
+                        <!-- Trusted devices will be listed here -->
+                    </ul>
+                </div>
+                <hr>
+                <div class="setting-action">
+                    <button id="sync-now-btn" class="button-primary">Sync Now</button>
                 </div>
             </section>
 
         </div>
     </main>
 
-    <script src="js/utils/datamatrix.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@zxing/browser@latest/umd/zxing-browser.min.js"></script>
+    
     
     <script src="js/features/settings.js"></script>
     <script src="js/features/sync.js"></script>

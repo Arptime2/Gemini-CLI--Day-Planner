@@ -63,45 +63,38 @@
     margin-top: 1rem;
 }
 
-/* Data Matrix Modal Styles */
-.modal-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.8);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 1000;
+
+
+#local-key-display, #remote-key-input {
+    flex-grow: 1;
+    background-color: var(--background-color);
+    color: var(--text-color);
+    border: 1px solid var(--subtle-border-color);
+    border-radius: 5px;
+    padding: 0.8rem;
+    font-size: 1rem;
 }
 
-.modal-content {
-    width: 90vw;
-    height: 90vh;
-    max-width: 90vh;
-    background-color: var(--background-color);
-    padding: 1rem;
-    border-radius: 10px;
+#trusted-devices-list {
+    list-style: none;
+    padding: 0;
+    margin-top: 1rem;
+}
+
+#trusted-devices-list li {
     display: flex;
-    flex-direction: column;
     justify-content: space-between;
     align-items: center;
-    position: relative;
+    padding: 0.5rem;
+    background-color: var(--secondary-background-color);
+    border-radius: 5px;
+    margin-bottom: 0.5rem;
 }
 
-#datamatrix-display {
-    flex-grow: 1;
-    width: 100%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 0;
-}
-
-#datamatrix-display svg {
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
+#trusted-devices-list .remove-device-btn {
+    background: none;
+    border: none;
+    color: var(--accent-color);
+    cursor: pointer;
+    font-size: 1.2rem;
 }

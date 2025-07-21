@@ -6,109 +6,60 @@ document.addEventListener('DOMContentLoaded', () => {
     const saveKeyBtn = document.getElementById('save-key-btn');
     const apiKeyStatus = document.getElementById('api-key-status');
     const themeToggleBtn = document.getElementById('theme-toggle-btn');
-    const syncStatusContainer = document.getElementById('sync-status-container');
-    const connectNewDeviceBtn = document.getElementById('connect-new-device-btn');
-    const disconnectDeviceBtn = document.getElementById('disconnect-device-btn');
+    const generateKeyBtn = document.getElementById('generate-key-btn');
+    const localKeyDisplay = document.getElementById('local-key-display');
+    const remoteKeyInput = document.getElementById('remote-key-input');
+    const addDeviceBtn = document.getElementById('add-device-btn');
+    const trustedDevicesList = document.getElementById('trusted-devices-list');
+    const syncNowBtn = document.getElementById('sync-now-btn');
 
-    async function handleConnectNewDevice() {
-        const modalOverlay = document.createElement('div');
-        modalOverlay.className = 'modal-overlay';
-        document.body.appendChild(modalOverlay);
-        document.body.classList.add('modal-open');
+    let trustedDevices = JSON.parse(localStorage.getItem('trusted_devices')) || [];
 
-        const modalContent = document.createElement('div');
-        modalContent.className = 'modal-content';
-        modalOverlay.appendChild(modalContent);
+    function generateSyncKey() {
+        const key = 'zenith_sync_' + Math.random().toString(36).substr(2, 16);
+        localKeyDisplay.value = key;
+        return key;
+    }
 
-        const closeBtn = document.createElement('button');
-        closeBtn.className = 'modal-close-btn';
-        closeBtn.textContent = '❌';
-        closeBtn.onclick = () => {
-            document.body.removeChild(modalOverlay);
-            document.body.classList.remove('modal-open');
-            window.sync.closeConnection();
-        };
-        modalContent.appendChild(closeBtn);
-
-        const statusMessage = document.createElement('p');
-        statusMessage.id = 'sync-status-message';
-        modalContent.appendChild(statusMessage);
-
-        const datamatrixDisplay = document.createElement('div');
-        datamatrixDisplay.id = 'datamatrix-display';
-        modalContent.appendChild(datamatrixDisplay);
-
-        const showOffer = async () => {
-            statusMessage.textContent = 'Scan this code with your other device.';
-            try {
-                const offerSdp = await window.sync.createOffer();
-                window.datamatrix.generate(datamatrixDisplay, offerSdp);
-                await waitForAnswer();
-            } catch (err) {
-                statusMessage.textContent = 'Error creating offer. Please try again.';
-                console.error(err);
-            }
-        };
-
-        const scanOffer = async () => {
-            statusMessage.textContent = 'Point your camera at the code on the other device.';
-            try {
-                const offerSdp = await window.datamatrix.scan();
-                if (offerSdp) {
-                    statusMessage.textContent = 'Code scanned! Creating reply...';
-                    const answerSdp = await window.sync.createAnswer(offerSdp);
-                    datamatrixDisplay.innerHTML = '';
-                    statusMessage.textContent = 'Scan this reply code with your first device.';
-                    window.datamatrix.generate(datamatrixDisplay, answerSdp);
-                } else {
-                    statusMessage.textContent = 'Scan cancelled. Please try again.';
-                }
-            } catch (err) {
-                statusMessage.textContent = 'Error scanning offer. Please try again.';
-                console.error(err);
-            }
-        };
-
-        const waitForAnswer = async () => {
-            statusMessage.textContent = 'Waiting for the other device to scan the reply...';
-            // In a real implementation, the answer would be sent back over the established data channel.
-            // For this simulation, we will rely on the user scanning the reply code.
-        };
-
-        const initialChoice = () => {
-            statusMessage.textContent = 'How are you connecting?';
-            const generateOfferBtn = document.createElement('button');
-            generateOfferBtn.className = 'button-primary';
-            generateOfferBtn.textContent = 'Show connection code';
-            generateOfferBtn.onclick = showOffer;
-            modalContent.appendChild(generateOfferBtn);
-
-            const scanOfferBtn = document.createElement('button');
-            scanOfferBtn.className = 'button-primary';
-            scanOfferBtn.textContent = 'Scan connection code';
-            scanOfferBtn.onclick = scanOffer;
-            modalContent.appendChild(scanOfferBtn);
-        };
-
-        window.sync.setOnConnectionStatusChange((status) => {
-            if (status === 'connected') {
-                syncStatusContainer.textContent = 'Connected!';
-                connectNewDeviceBtn.style.display = 'none';
-                disconnectDeviceBtn.style.display = 'block';
-                if (modalOverlay) {
-                    document.body.removeChild(modalOverlay);
-                    document.body.classList.remove('modal-open');
-                }
-            } else if (status === 'disconnected') {
-                syncStatusContainer.textContent = 'Disconnected.';
-                connectNewDeviceBtn.style.display = 'block';
-                disconnectDeviceBtn.style.display = 'none';
-            } else {
-                syncStatusContainer.textContent = `Status: ${status}`;
-            }
+    function renderTrustedDevices() {
+        trustedDevicesList.innerHTML = '';
+        trustedDevices.forEach(deviceKey => {
+            const li = document.createElement('li');
+            li.textContent = deviceKey;
+            const removeBtn = document.createElement('button');
+            removeBtn.className = 'remove-device-btn';
+            removeBtn.textContent = '❌';
+            removeBtn.onclick = () => removeDevice(deviceKey);
+            li.appendChild(removeBtn);
+            trustedDevicesList.appendChild(li);
         });
+    }
 
-        initialChoice();
+    function addDevice() {
+        const newKey = remoteKeyInput.value.trim();
+        if (newKey && !trustedDevices.includes(newKey)) {
+            trustedDevices.push(newKey);
+            localStorage.setItem('trusted_devices', JSON.stringify(trustedDevices));
+            remoteKeyInput.value = '';
+            renderTrustedDevices();
+        } else if (!newKey) {
+            alert('Please enter a key.');
+        } else {
+            alert('This device key is already in your trusted list.');
+        }
+    }
+
+    function removeDevice(keyToRemove) {
+        trustedDevices = trustedDevices.filter(key => key !== keyToRemove);
+        localStorage.setItem('trusted_devices', JSON.stringify(trustedDevices));
+        renderTrustedDevices();
+    }
+
+    async function syncNow() {
+        alert('Syncing with trusted devices...');
+        // In a real implementation, this would trigger the data exchange.
+        // For now, this is a placeholder.
+        console.log('Syncing with:', trustedDevices);
     }
 
     function toggleTheme() {
@@ -199,8 +150,10 @@ document.addEventListener('DOMContentLoaded', () => {
     importFile.addEventListener('change', importData);
     saveKeyBtn.addEventListener('click', saveApiKey);
     themeToggleBtn.addEventListener('click', toggleTheme);
-    connectNewDeviceBtn.addEventListener('click', handleConnectNewDevice);
-    disconnectDeviceBtn.addEventListener('click', () => window.sync.closeConnection());
+    generateKeyBtn.addEventListener('click', generateSyncKey);
+    addDeviceBtn.addEventListener('click', addDevice);
+    syncNowBtn.addEventListener('click', syncNow);
 
     loadApiKey();
+    renderTrustedDevices();
 });
