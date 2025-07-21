@@ -9,8 +9,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const generateKeyBtn = document.getElementById('generate-key-btn');
     const localKeyDisplay = document.getElementById('local-key-display');
     const remoteKeyInput = document.getElementById('remote-key-input');
-    const addDeviceBtn = document.getElementById('add-device-btn');
-    const trustedDevicesList = document.getElementById('trusted-devices-list');
+    const connectBtn = document.getElementById('connect-btn');
     const syncNowBtn = document.getElementById('sync-now-btn');
 
     let localPeerId;
@@ -23,44 +22,24 @@ document.addEventListener('DOMContentLoaded', () => {
     function initializePeer() {
         localPeerId = generatePeerId();
         localKeyDisplay.value = localPeerId;
-        webRTCSync = new window.sync.WebRTCSync(handleDataReceived);
+        webRTCSync = new window.sync.WebRTCSync(localPeerId, handleDataReceived);
     }
 
-    async function startSync() {
+    async function connectToPeer() {
         const remotePeerId = remoteKeyInput.value.trim();
         if (!remotePeerId) {
             alert('Please enter a remote peer ID.');
             return;
         }
-
-        const offer = await webRTCSync.createOffer();
-        // In a real application, you would use a signaling server to send the offer
-        // to the remote peer. For this example, we'll simulate the exchange.
-        console.log('Offer created:', offer);
-        alert('Offer created. Please send this to the other device.');
-    }
-
-    async function acceptOffer() {
-        const offerString = prompt('Please paste the offer from the other device:');
-        if (!offerString) return;
-
-        const offer = JSON.parse(offerString);
-        const answer = await webRTCSync.createAnswer(offer);
-        // In a real application, you would use a signaling server to send the answer
-        // back to the offering peer. For this example, we'll simulate the exchange.
-        console.log('Answer created:', answer);
-        alert('Answer created. Please send this back to the other device.');
-    }
-
-    async function finalizeSync() {
-        const answerString = prompt('Please paste the answer from the other device:');
-        if (!answerString) return;
-
-        const answer = JSON.parse(answerString);
-        await webRTCSync.setAnswer(answer);
+        await webRTCSync.connect(remotePeerId);
+        await webRTCSync.start();
     }
 
     async function syncNow() {
+        if (!webRTCSync || !webRTCSync.dataChannel || webRTCSync.dataChannel.readyState !== 'open') {
+            alert('Please connect to a peer first.');
+            return;
+        }
         const localData = {
             tasks: await window.db.getAllItems('tasks'),
             habits: await window.db.getAllItems('habits'),
@@ -70,11 +49,20 @@ document.addEventListener('DOMContentLoaded', () => {
         alert('Data sent!');
     }
 
-    function handleDataReceived(data) {
+    async function handleDataReceived(data) {
         console.log('Data received:', data);
-        // Here you would merge the received data with your local data
-        // For simplicity, we'll just log it.
         alert('Data received from the other device!');
+
+        if (data.tasks) {
+            for (const item of data.tasks) await window.db.updateItem('tasks', item);
+        }
+        if (data.habits) {
+            for (const item of data.habits) await window.db.updateItem('habits', item);
+        }
+        if (data.notes) {
+            for (const item of data.notes) await window.db.updateItem('notes', item);
+        }
+        location.reload();
     }
 
     function toggleTheme() {
@@ -166,9 +154,7 @@ document.addEventListener('DOMContentLoaded', () => {
     saveKeyBtn.addEventListener('click', saveApiKey);
     themeToggleBtn.addEventListener('click', toggleTheme);
     generateKeyBtn.addEventListener('click', initializePeer);
-    addDeviceBtn.addEventListener('click', startSync);
-    document.getElementById('accept-offer-btn').addEventListener('click', acceptOffer);
-    document.getElementById('finalize-sync-btn').addEventListener('click', finalizeSync);
+    connectBtn.addEventListener('click', connectToPeer);
     syncNowBtn.addEventListener('click', syncNow);
 
     loadApiKey();
