@@ -84,3 +84,7 @@ This application must be served by a local web server for all features (especial
     [http://localhost:8000](http://localhost:8000)
 
 The application will now be running.
+
+## Or try at:
+
+https://arptime2.github.io/Gemini-CLI--Day-Planner/
