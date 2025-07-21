@@ -1,41 +1,53 @@
-async function syncWithGun(user, trustedDevices) {
-    console.log('Initiating sync with Gun...');
+class WebRTCSync {
+    constructor(onDataReceived) {
+        this.peerConnection = new RTCPeerConnection({
+            iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
+        });
+        this.dataChannel = null;
+        this.onDataReceived = onDataReceived;
+        this.peerConnection.ondatachannel = this.receiveDataChannel.bind(this);
+    }
 
-    const localData = {
-        tasks: await window.db.getAllItems('tasks'),
-        habits: await window.db.getAllItems('habits'),
-        notes: await window.db.getAllItems('notes'),
-    };
+    async createOffer() {
+        this.dataChannel = this.peerConnection.createDataChannel('sync');
+        this.setupDataChannel();
+        const offer = await this.peerConnection.createOffer();
+        await this.peerConnection.setLocalDescription(offer);
+        return offer;
+    }
 
-    // Encrypt and send data to each trusted device
-    for (const deviceKey of trustedDevices) {
-        for (const storeName in localData) {
-            const dataToSync = localData[storeName];
-            user.get('data').get(storeName).put(JSON.stringify(dataToSync), (ack) => {
-                if (ack.err) {
-                    console.error(`Error sending ${storeName} to ${deviceKey}:`, ack.err);
-                } else {
-                    console.log(`${storeName} sent to ${deviceKey} successfully`);
-                }
-            });
+    async createAnswer(offer) {
+        await this.peerConnection.setRemoteDescription(offer);
+        const answer = await this.peerConnection.createAnswer();
+        await this.peerConnection.setLocalDescription(answer);
+        return answer;
+    }
+
+    async setAnswer(answer) {
+        await this.peerConnection.setRemoteDescription(answer);
+    }
+
+    send(data) {
+        if (this.dataChannel && this.dataChannel.readyState === 'open') {
+            this.dataChannel.send(JSON.stringify(data));
         }
     }
 
-    // Listen for data from trusted devices
-    for (const deviceKey of trustedDevices) {
-        gun.user(deviceKey).get('data').on(async (encryptedData, key) => {
-            const decryptedData = await SEA.decrypt(encryptedData, pair);
-            if (decryptedData) {
-                const { storeName, data } = decryptedData;
-                console.log(`Received ${storeName} from ${deviceKey}`);
-                for (const item of data) {
-                    await window.db.updateItem(storeName, item);
-                }
-            }
-        });
+    receiveDataChannel(event) {
+        this.dataChannel = event.channel;
+        this.setupDataChannel();
+    }
+
+    setupDataChannel() {
+        this.dataChannel.onmessage = (event) => {
+            const data = JSON.parse(event.data);
+            this.onDataReceived(data);
+        };
+        this.dataChannel.onopen = () => console.log('Data channel opened');
+        this.dataChannel.onclose = () => console.log('Data channel closed');
     }
 }
 
 window.sync = {
-    syncWithGun,
+    WebRTCSync
 };

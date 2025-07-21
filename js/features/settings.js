@@ -13,80 +13,68 @@ document.addEventListener('DOMContentLoaded', () => {
     const trustedDevicesList = document.getElementById('trusted-devices-list');
     const syncNowBtn = document.getElementById('sync-now-btn');
 
-    let trustedDevices = JSON.parse(localStorage.getItem('trusted_devices')) || [];
-    let gun;
-    let user;
-    let pair;
+    let localPeerId;
+    let webRTCSync;
 
-    function initializeGun() {
-        gun = Gun({ peers: ['https://gun-manhattan.herokuapp.com/gun'] });
-        const userKeys = JSON.parse(localStorage.getItem('gun_keys'));
-        if (userKeys) {
-            user = gun.user().auth(userKeys);
-            localKeyDisplay.value = userKeys.pub;
-        } else {
-            user = gun.user().create(Math.random().toString(36).substring(2), Math.random().toString(36).substring(2), (ack) => {
-                if (ack.err) {
-                    console.error('Error creating user:', ack.err);
-                } else {
-                    localStorage.setItem('gun_keys', JSON.stringify(ack.sea));
-                    localKeyDisplay.value = ack.sea.pub;
-                }
-            });
+    function generatePeerId() {
+        return 'zenith_sync_' + Math.random().toString(36).substr(2, 16);
+    }
+
+    function initializePeer() {
+        localPeerId = generatePeerId();
+        localKeyDisplay.value = localPeerId;
+        webRTCSync = new window.sync.WebRTCSync(handleDataReceived);
+    }
+
+    async function startSync() {
+        const remotePeerId = remoteKeyInput.value.trim();
+        if (!remotePeerId) {
+            alert('Please enter a remote peer ID.');
+            return;
         }
+
+        const offer = await webRTCSync.createOffer();
+        // In a real application, you would use a signaling server to send the offer
+        // to the remote peer. For this example, we'll simulate the exchange.
+        console.log('Offer created:', offer);
+        alert('Offer created. Please send this to the other device.');
     }
 
-    function generateSyncKey() {
-        const keys = JSON.parse(localStorage.getItem('gun_keys'));
-        if (keys) {
-            localKeyDisplay.value = keys.pub;
-        } else {
-            alert('Gun user not initialized. Please refresh the page.');
-        }
+    async function acceptOffer() {
+        const offerString = prompt('Please paste the offer from the other device:');
+        if (!offerString) return;
+
+        const offer = JSON.parse(offerString);
+        const answer = await webRTCSync.createAnswer(offer);
+        // In a real application, you would use a signaling server to send the answer
+        // back to the offering peer. For this example, we'll simulate the exchange.
+        console.log('Answer created:', answer);
+        alert('Answer created. Please send this back to the other device.');
     }
 
-    function renderTrustedDevices() {
-        trustedDevicesList.innerHTML = '';
-        trustedDevices.forEach(deviceKey => {
-            const li = document.createElement('li');
-            li.textContent = deviceKey;
-            const removeBtn = document.createElement('button');
-            removeBtn.className = 'remove-device-btn';
-            removeBtn.textContent = '❌';
-            removeBtn.onclick = () => removeDevice(deviceKey);
-            li.appendChild(removeBtn);
-            trustedDevicesList.appendChild(li);
-        });
-    }
+    async function finalizeSync() {
+        const answerString = prompt('Please paste the answer from the other device:');
+        if (!answerString) return;
 
-    function addDevice() {
-        const newKey = remoteKeyInput.value.trim();
-        if (newKey && !trustedDevices.includes(newKey)) {
-            trustedDevices.push(newKey);
-            localStorage.setItem('trusted_devices', JSON.stringify(trustedDevices));
-            remoteKeyInput.value = '';
-            renderTrustedDevices();
-        } else if (!newKey) {
-            alert('Please enter a key.');
-        } else {
-            alert('This device key is already in your trusted list.');
-        }
-    }
-
-    function removeDevice(keyToRemove) {
-        trustedDevices = trustedDevices.filter(key => key !== keyToRemove);
-        localStorage.setItem('trusted_devices', JSON.stringify(trustedDevices));
-        renderTrustedDevices();
+        const answer = JSON.parse(answerString);
+        await webRTCSync.setAnswer(answer);
     }
 
     async function syncNow() {
-        if (!user) {
-            alert('Please generate a sync key first.');
-            return;
-        }
-        alert('Syncing with trusted devices...');
-        await window.sync.syncWithGun(user, trustedDevices);
-        console.log('Syncing with:', trustedDevices);
+        const localData = {
+            tasks: await window.db.getAllItems('tasks'),
+            habits: await window.db.getAllItems('habits'),
+            notes: await window.db.getAllItems('notes'),
+        };
+        webRTCSync.send(localData);
+        alert('Data sent!');
+    }
+
+    function handleDataReceived(data) {
+        console.log('Data received:', data);
+        // Here you would merge the received data with your local data
+        // For simplicity, we'll just log it.
+        alert('Data received from the other device!');
     }
 
     function toggleTheme() {
@@ -152,7 +140,7 @@ document.addEventListener('DOMContentLoaded', () => {
             apiKeyInput.value = '';
             apiKeyInput.placeholder = 'API Key is set';
             showStatusMessage('✅ Saved!');
-        } 
+        }
     }
 
     function showStatusMessage(message) {
@@ -177,11 +165,11 @@ document.addEventListener('DOMContentLoaded', () => {
     importFile.addEventListener('change', importData);
     saveKeyBtn.addEventListener('click', saveApiKey);
     themeToggleBtn.addEventListener('click', toggleTheme);
-    generateKeyBtn.addEventListener('click', generateSyncKey);
-    addDeviceBtn.addEventListener('click', addDevice);
+    generateKeyBtn.addEventListener('click', initializePeer);
+    addDeviceBtn.addEventListener('click', startSync);
+    document.getElementById('accept-offer-btn').addEventListener('click', acceptOffer);
+    document.getElementById('finalize-sync-btn').addEventListener('click', finalizeSync);
     syncNowBtn.addEventListener('click', syncNow);
 
     loadApiKey();
-    renderTrustedDevices();
-    initializeGun();
 });
