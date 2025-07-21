@@ -8,36 +8,65 @@ document.addEventListener('DOMContentLoaded', () => {
     const themeToggleBtn = document.getElementById('theme-toggle-btn');
     const generateKeyBtn = document.getElementById('generate-key-btn');
     const localKeyDisplay = document.getElementById('local-key-display');
-    const remoteKeyInput = document.getElementById('remote-key-input');
-    const connectBtn = document.getElementById('connect-btn');
+    const createOfferBtn = document.getElementById('create-offer-btn');
+    const acceptOfferBtn = document.getElementById('accept-offer-btn');
+    const finalizeSyncBtn = document.getElementById('finalize-sync-btn');
     const syncNowBtn = document.getElementById('sync-now-btn');
 
-    let localPeerId;
     let webRTCSync;
 
-    function generatePeerId() {
-        return 'zenith_sync_' + Math.random().toString(36).substr(2, 16);
-    }
-
     function initializePeer() {
-        localPeerId = generatePeerId();
-        localKeyDisplay.value = localPeerId;
-        webRTCSync = new window.sync.WebRTCSync(localPeerId, handleDataReceived);
+        localKeyDisplay.value = 'Peer Initialized';
+        webRTCSync = new window.sync.WebRTCSync(handleDataReceived);
     }
 
-    async function connectToPeer() {
-        const remotePeerId = remoteKeyInput.value.trim();
-        if (!remotePeerId) {
-            alert('Please enter a remote peer ID.');
+    async function createOffer() {
+        if (!webRTCSync) {
+            alert('Please generate a key first.');
             return;
         }
-        await webRTCSync.connect(remotePeerId);
-        await webRTCSync.start();
+        const offer = await webRTCSync.createOffer();
+        prompt('Copy this offer and paste it on the other device:', JSON.stringify(offer));
+    }
+
+    async function acceptOffer() {
+        if (!webRTCSync) {
+            alert('Please generate a key first.');
+            return;
+        }
+        const offerString = prompt('Paste the offer from the other device:');
+        if (!offerString) return;
+
+        try {
+            const offer = JSON.parse(offerString);
+            const answer = await webRTCSync.createAnswer(offer);
+            prompt('Copy this answer and paste it on the first device:', JSON.stringify(answer));
+        } catch (e) {
+            alert('Invalid offer format.');
+            console.error(e);
+        }
+    }
+
+    async function finalizeSync() {
+        if (!webRTCSync) {
+            alert('Please generate a key first.');
+            return;
+        }
+        const answerString = prompt('Paste the answer from the other device:');
+        if (!answerString) return;
+
+        try {
+            const answer = JSON.parse(answerString);
+            await webRTCSync.setAnswer(answer);
+        } catch (e) {
+            alert('Invalid answer format.');
+            console.error(e);
+        }
     }
 
     async function syncNow() {
         if (!webRTCSync || !webRTCSync.dataChannel || webRTCSync.dataChannel.readyState !== 'open') {
-            alert('Please connect to a peer first.');
+            alert('Please establish a connection first.');
             return;
         }
         const localData = {
@@ -154,7 +183,9 @@ document.addEventListener('DOMContentLoaded', () => {
     saveKeyBtn.addEventListener('click', saveApiKey);
     themeToggleBtn.addEventListener('click', toggleTheme);
     generateKeyBtn.addEventListener('click', initializePeer);
-    connectBtn.addEventListener('click', connectToPeer);
+    createOfferBtn.addEventListener('click', createOffer);
+    acceptOfferBtn.addEventListener('click', acceptOffer);
+    finalizeSyncBtn.addEventListener('click', finalizeSync);
     syncNowBtn.addEventListener('click', syncNow);
 
     loadApiKey();

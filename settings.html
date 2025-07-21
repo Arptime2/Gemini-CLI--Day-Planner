@@ -45,17 +45,22 @@
             </section>
 
             <section class="card settings-card">
-                <h2>Device Sync</h2>
-                <p>Generate a sync key to connect another device and sync your data in real-time. No server or account needed.</p>
+                <h2>Device Sync (Manual)</h2>
+                <p><strong>Step 1:</strong> Click "Generate New Key" on both devices.</p>
+                <p><strong>Step 2:</strong> On <strong>Device A</strong>, click "Create Offer" and copy the generated text.</p>
+                <p><strong>Step 3:</strong> On <strong>Device B</strong>, click "Accept Offer" and paste the text from Device A.</p>
+                <p><strong>Step 4:</strong> Copy the new text generated on <strong>Device B</strong>.</p>
+                <p><strong>Step 5:</strong> On <strong>Device A</strong>, click "Finalize Sync" and paste the text from Device B.</p>
+                <p>Once the connection is established, you can click "Sync Now" to exchange data.</p>
                 <div class="setting-action">
                     <button id="generate-key-btn" class="button-primary">Generate New Key</button>
                     <input type="text" id="local-key-display" readonly placeholder="Your sync key will appear here...">
                 </div>
                 <hr>
-                <p>Enter a sync key from another device to connect.</p>
                 <div class="setting-action">
-                    <input type="text" id="remote-key-input" placeholder="Enter remote key...">
-                    <button id="connect-btn" class="button-primary">Connect</button>
+                    <button id="create-offer-btn" class="button-primary">Create Offer</button>
+                    <button id="accept-offer-btn" class="button-primary">Accept Offer</button>
+                    <button id="finalize-sync-btn" class="button-primary">Finalize Sync</button>
                 </div>
                 <hr>
                 <div class="setting-action">
