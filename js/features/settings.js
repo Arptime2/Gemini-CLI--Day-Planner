@@ -14,11 +14,35 @@ document.addEventListener('DOMContentLoaded', () => {
     const syncNowBtn = document.getElementById('sync-now-btn');
 
     let trustedDevices = JSON.parse(localStorage.getItem('trusted_devices')) || [];
+    let gun;
+    let user;
+    let pair;
+
+    function initializeGun() {
+        gun = Gun({ peers: ['https://gun-manhattan.herokuapp.com/gun'] });
+        const userKeys = JSON.parse(localStorage.getItem('gun_keys'));
+        if (userKeys) {
+            user = gun.user().auth(userKeys);
+            localKeyDisplay.value = userKeys.pub;
+        } else {
+            user = gun.user().create(Math.random().toString(36).substring(2), Math.random().toString(36).substring(2), (ack) => {
+                if (ack.err) {
+                    console.error('Error creating user:', ack.err);
+                } else {
+                    localStorage.setItem('gun_keys', JSON.stringify(ack.sea));
+                    localKeyDisplay.value = ack.sea.pub;
+                }
+            });
+        }
+    }
 
     function generateSyncKey() {
-        const key = 'zenith_sync_' + Math.random().toString(36).substr(2, 16);
-        localKeyDisplay.value = key;
-        return key;
+        const keys = JSON.parse(localStorage.getItem('gun_keys'));
+        if (keys) {
+            localKeyDisplay.value = keys.pub;
+        } else {
+            alert('Gun user not initialized. Please refresh the page.');
+        }
     }
 
     function renderTrustedDevices() {
@@ -56,9 +80,12 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function syncNow() {
+        if (!user) {
+            alert('Please generate a sync key first.');
+            return;
+        }
         alert('Syncing with trusted devices...');
-        // In a real implementation, this would trigger the data exchange.
-        // For now, this is a placeholder.
+        await window.sync.syncWithGun(user, trustedDevices);
         console.log('Syncing with:', trustedDevices);
     }
 
@@ -125,7 +152,7 @@ document.addEventListener('DOMContentLoaded', () => {
             apiKeyInput.value = '';
             apiKeyInput.placeholder = 'API Key is set';
             showStatusMessage('✅ Saved!');
-        }
+        } 
     }
 
     function showStatusMessage(message) {
@@ -156,4 +183,5 @@ document.addEventListener('DOMContentLoaded', () => {
 
     loadApiKey();
     renderTrustedDevices();
+    initializeGun();
 });

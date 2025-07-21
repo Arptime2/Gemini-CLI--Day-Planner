@@ -1,45 +1,41 @@
-// js/features/sync.js
+async function syncWithGun(user, trustedDevices) {
+    console.log('Initiating sync with Gun...');
 
-async function syncWithDevice(deviceKey) {
-    // This is a placeholder for the actual sync logic.
-    // In a real implementation, this function would handle the data exchange
-    // with the device corresponding to the given key.
-    console.log(`Initiating sync with device: ${deviceKey}`);
-
-    // 1. Get local data
     const localData = {
         tasks: await window.db.getAllItems('tasks'),
         habits: await window.db.getAllItems('habits'),
         notes: await window.db.getAllItems('notes'),
     };
 
-    // 2. Send local data to the remote device and get its data in return.
-    // This would involve a network request to a server that facilitates the
-    // peer-to-peer connection, or a direct connection if using WebRTC.
-    // For this placeholder, we'll simulate receiving data from the other device.
-    const remoteData = {
-        tasks: [], // Simulated remote tasks
-        habits: [], // Simulated remote habits
-        notes: [], // Simulated remote notes
-    };
+    // Encrypt and send data to each trusted device
+    for (const deviceKey of trustedDevices) {
+        for (const storeName in localData) {
+            const dataToSync = localData[storeName];
+            user.get('data').get(storeName).put(JSON.stringify(dataToSync), (ack) => {
+                if (ack.err) {
+                    console.error(`Error sending ${storeName} to ${deviceKey}:`, ack.err);
+                } else {
+                    console.log(`${storeName} sent to ${deviceKey} successfully`);
+                }
+            });
+        }
+    }
 
-    // 3. Merge the local and remote data.
-    // This is a simplistic merge strategy. A more robust implementation would
-    // handle conflicts based on timestamps or other criteria.
-    const mergedData = {
-        tasks: [...localData.tasks, ...remoteData.tasks],
-        habits: [...localData.habits, ...remoteData.habits],
-        notes: [...localData.notes, ...remoteData.notes],
-    };
-
-    // 4. Update the local database with the merged data.
-    for (const task of mergedData.tasks) await window.db.updateItem('tasks', task);
-    for (const habit of mergedData.habits) await window.db.updateItem('habits', habit);
-    for (const note of mergedData.notes) await window.db.updateItem('notes', note);
-
-    console.log(`Sync with device ${deviceKey} complete.`);
+    // Listen for data from trusted devices
+    for (const deviceKey of trustedDevices) {
+        gun.user(deviceKey).get('data').on(async (encryptedData, key) => {
+            const decryptedData = await SEA.decrypt(encryptedData, pair);
+            if (decryptedData) {
+                const { storeName, data } = decryptedData;
+                console.log(`Received ${storeName} from ${deviceKey}`);
+                for (const item of data) {
+                    await window.db.updateItem(storeName, item);
+                }
+            }
+        });
+    }
 }
 
 window.sync = {
-    syncWithDevice,
+    syncWithGun,
 };
